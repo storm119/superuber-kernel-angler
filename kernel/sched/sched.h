@@ -1447,6 +1447,12 @@ static inline void add_nr_running(struct rq *rq, unsigned count)
 			rq->rd->overload = true;
 #endif
 
+	if (rq->nr_running == 2) {
+#ifdef CONFIG_SMP
+		if (!rq->rd->overload)
+			rq->rd->overload = true;
+#endif
+
 #ifdef CONFIG_NO_HZ_FULL
 		if (tick_nohz_full_cpu(rq->cpu)) {
 			/* Order rq->nr_running write against the IPI */
@@ -1454,7 +1460,7 @@ static inline void add_nr_running(struct rq *rq, unsigned count)
 			smp_send_reschedule(rq->cpu);
 		}
 #endif
-       }
+	}
 }
 
 static inline void sub_nr_running(struct rq *rq, unsigned count)

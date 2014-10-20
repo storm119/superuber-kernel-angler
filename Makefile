@@ -242,7 +242,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
 ifdef CONFIG_CC_OPTIMIZE_ALOT
-HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer
+HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer -std=gnu89
 HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 -ftree-vectorize 
 endif
 
@@ -387,12 +387,14 @@ KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs 
                    -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize -ffast-math \
                    -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
 		   -fno-aggressive-loop-optimizations \
-		   -fno-delete-null-pointer-checks
+		   -fno-delete-null-pointer-checks \
+                   -std=gnu89
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 KBUILD_AFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 KBUILD_CFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 endif
+
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE

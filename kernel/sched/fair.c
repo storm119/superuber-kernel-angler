@@ -1374,6 +1374,14 @@ int __read_mostly sysctl_sched_upmigrate_min_nice = 9;
 unsigned int up_down_migrate_scale_factor = 1024;
 
 /*
+ * The load scale factor of a CPU gets boosted when its max frequency
+ * is restricted due to which the tasks are migrating to higher capacity
+ * CPUs early. The sched_upmigrate threshold is auto-upgraded by
+ * rq->max_possible_freq/rq->max_freq of a lower capacity CPU.
+ */
+unsigned int up_down_migrate_scale_factor = 1024;
+
+/*
  * Scheduler boost is a mechanism to temporarily place tasks on CPUs
  * with higher capacity than those where a task would have normally
  * ended up with their load characteristics. Any entity enabling

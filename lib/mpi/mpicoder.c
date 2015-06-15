@@ -146,25 +146,18 @@ int mpi_read_buffer(MPI a, uint8_t *buf, unsigned buf_len, unsigned *nbytes,
 	uint8_t *p;
 	mpi_limb_t alimb;
 	unsigned int n = mpi_get_size(a);
-	int i, lzeros = 0;
+	int i;
 
-	if (buf_len < n || !buf || !nbytes)
+	if (buf_len < n || !buf)
 		return -EINVAL;
 
 	if (sign)
 		*sign = a->sign;
 
-	p = (void *)&a->d[a->nlimbs] - 1;
-
-	for (i = a->nlimbs * sizeof(alimb) - 1; i >= 0; i--, p--) {
-		if (!*p)
-			lzeros++;
-		else
-			break;
-	}
+	if (nbytes)
+		*nbytes = n;
 
 	p = buf;
-	*nbytes = n - lzeros;
 
 	for (i = a->nlimbs - 1; i >= 0; i--) {
 		alimb = a->d[i];
@@ -217,7 +210,7 @@ EXPORT_SYMBOL_GPL(mpi_read_buffer);
  */
 void *mpi_get_buffer(MPI a, unsigned *nbytes, int *sign)
 {
-	uint8_t *buf;
+	uint8_t *buf, *p;
 	unsigned int n;
 	int ret;
 
@@ -240,6 +233,14 @@ void *mpi_get_buffer(MPI a, unsigned *nbytes, int *sign)
 		kfree(buf);
 		return NULL;
 	}
+
+	/* this is sub-optimal but we need to do the shift operation
+	 * because the caller has to free the returned buffer */
+	for (p = buf; !*p && *nbytes; p++, --*nbytes)
+		;
+	if (p != buf)
+		memmove(buf, p, *nbytes);
+
 	return buf;
 }
 EXPORT_SYMBOL_GPL(mpi_get_buffer);

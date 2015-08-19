@@ -2118,6 +2118,8 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 		}
 	}
 
+	if (unlikely(cpumask_empty(&search_cpus)))
+		return i;
 	if (unlikely(!cpumask_test_cpu(i, &search_cpus)))
 		i = cpumask_first(&search_cpus);
 

@@ -346,7 +346,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten -mcpu=cortex-a57 -mtune=cortex-a57
 FLAGS_MODULE   = $(GRAPHITE)
 AFLAGS_MODULE   = $(GRAPHITE)
 LDFLAGS_MODULE  = --strip-debug

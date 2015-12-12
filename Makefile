@@ -346,7 +346,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten -mcpu=cortex-a57 -mtune=cortex-a57
+GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53
 FLAGS_MODULE   = $(GRAPHITE)
 AFLAGS_MODULE   = $(GRAPHITE)
 LDFLAGS_MODULE  = --strip-debug
@@ -383,7 +383,8 @@ KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs 
 		   -fno-delete-null-pointer-checks \
 		   -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize \
            -fvect-cost-model -ftree-partial-pre \
-           -fgcse-lm -fgcse-sm -fsched-spec-load -fsingle-precision-constant
+           -fgcse-lm -fgcse-sm -fsched-spec-load -fsingle-precision-constant 
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__

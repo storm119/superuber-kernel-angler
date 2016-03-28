@@ -384,7 +384,8 @@ KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs 
 		   -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize \
            -fvect-cost-model -ftree-partial-pre \
            -fgcse-lm -fgcse-sm -fsched-spec-load -fsingle-precision-constant \
-		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53
+		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 -Wno-unused-variable\
+	       -Wno-bool-compare
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=

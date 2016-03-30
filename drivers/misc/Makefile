@@ -69,3 +69,4 @@ obj-$(CONFIG_QCOM_LIQUID_DOCK)	+= qcom_liquid_dock.o
 obj-y				+= qcom/
 obj-$(CONFIG_UID_CPUTIME) += uid_cputime.o
 obj-$(CONFIG_WIFI_SAR) += wifi-sar.o
+obj-$(CONFIG_SOUND_CONTROL_HAX_3_GPL) += sound_control.o

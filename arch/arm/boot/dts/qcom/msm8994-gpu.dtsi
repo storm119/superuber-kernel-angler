@@ -77,6 +77,7 @@
 		/* Bus Scale Settings */
 		qcom,gpubw-dev = <&gpubw>;
 		qcom,bus-control;
+		qcom,bus-width = <32>;
 		/*
 		 * qcom,msm-bus structures below define
 		 * GPU msm client and its vote data for
@@ -111,6 +112,9 @@
 		coresight-outports = <0>;
 		coresight-child-list = <&funnel_in0>;
 		coresight-child-ports = <4>;
+
+		/* Enable POPP */
+		qcom,popp-enable;
 
 		/* Power levels */
 		qcom,gpu-pwrlevels {

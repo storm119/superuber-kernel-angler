@@ -20,6 +20,7 @@
 #include <linux/ftrace.h>
 #include <linux/mm.h>
 #include <linux/msm_adreno_devfreq.h>
+#include <linux/display_state.h>
 #include <asm/cacheflush.h>
 #include <soc/qcom/scm.h>
 #include "governor.h"
@@ -67,6 +68,103 @@ static void do_partner_start_event(struct work_struct *work);
 static void do_partner_stop_event(struct work_struct *work);
 static void do_partner_suspend_event(struct work_struct *work);
 static void do_partner_resume_event(struct work_struct *work);
+
+/* Display and suspend state booleans */ 
+static bool display_on;
+static bool suspended = false;
+
+static struct workqueue_struct *workqueue;
+
+/*
+ * Returns GPU suspend time in millisecond.
+ */
+u64 suspend_time_ms(void)
+{
+	u64 suspend_sampling_time;
+	u64 time_diff = 0;
+
+	if (suspend_start == 0)
+		return 0;
+
+	suspend_sampling_time = (u64)ktime_to_ms(ktime_get());
+	time_diff = suspend_sampling_time - suspend_start;
+	/* Update the suspend_start sample again */
+	suspend_start = suspend_sampling_time;
+	return time_diff;
+}
+
+static ssize_t gpu_load_show(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	unsigned long sysfs_busy_perc;
+	/*
+	 * Average out the samples taken since last read
+	 * This will keep the average value in sync with
+	 * with the client sampling duration.
+	 */
+	spin_lock(&sample_lock);
+	sysfs_busy_perc = (acc_relative_busy * 100) / acc_total;
+
+	/* Reset the parameters */
+	acc_total = 0;
+	acc_relative_busy = 0;
+	spin_unlock(&sample_lock);
+	return snprintf(buf, PAGE_SIZE, "%lu\n", sysfs_busy_perc);
+}
+
+/*
+ * Returns the time in ms for which gpu was in suspend state
+ * since last time the entry is read.
+ */
+static ssize_t suspend_time_show(struct device *dev,
+	struct device_attribute *attr,
+	char *buf)
+{
+	u64 time_diff = 0;
+
+	spin_lock(&suspend_lock);
+	time_diff = suspend_time_ms();
+	/*
+	 * Adding the previous suspend time also as the gpu
+	 * can go and come out of suspend states in between
+	 * reads also and we should have the total suspend
+	 * since last read.
+	 */
+	time_diff += suspend_time;
+	suspend_time = 0;
+	spin_unlock(&suspend_lock);
+
+	return snprintf(buf, PAGE_SIZE, "%llu\n", time_diff);
+}
+
+static DEVICE_ATTR(gpu_load, 0444, gpu_load_show, NULL);
+
+static DEVICE_ATTR(suspend_time, 0444,
+		suspend_time_show,
+		NULL);
+
+static const struct device_attribute *adreno_tz_attr_list[] = {
+		&dev_attr_gpu_load,
+		&dev_attr_suspend_time,
+		NULL
+};
+
+void compute_work_load(struct devfreq_dev_status *stats,
+		struct devfreq_msm_adreno_tz_data *priv,
+		struct devfreq *devfreq)
+{
+	spin_lock(&sample_lock);
+	/*
+	 * Keep collecting the stats till the client
+	 * reads it. Average of all samples and reset
+	 * is done when the entry is read
+	 */
+	acc_total += stats->total_time;
+	acc_relative_busy += (stats->busy_time * stats->current_frequency) /
+				devfreq->profile->freq_table[0];
+	spin_unlock(&sample_lock);
+}
 
 /* Trap into the TrustZone, and call funcs there. */
 static int __secure_tz_reset_entry2(unsigned int *scm_data, u32 size_scm_data,
@@ -204,6 +302,15 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq,
 	}
 
 	*freq = stats.current_frequency;
+
+	/*
+	 * Force to use & record as min freq when system has
+	 * entered pm-suspend or screen-off state.
+	 */
+	if (suspended || !display_on) {
+		*freq = devfreq->profile->freq_table[devfreq->profile->max_state - 1];
+		return 0;
+	}
 
 #ifdef CONFIG_ADRENO_IDLER
 	if (adreno_idler(stats, devfreq, freq)) {
@@ -381,9 +488,12 @@ static int tz_suspend(struct devfreq *devfreq)
 	struct devfreq_msm_adreno_tz_data *priv = devfreq->data;
 	unsigned int scm_data[2] = {0, 0};
 	__secure_tz_reset_entry2(scm_data, sizeof(scm_data), priv->is_64);
+	display_on = is_display_on();
+	suspended = true;
 
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
+
 	return 0;
 }
 
@@ -410,6 +520,14 @@ static int tz_handler(struct devfreq *devfreq, unsigned int event, void *data)
 		break;
 
 	case DEVFREQ_GOV_RESUME:
+		spin_lock(&suspend_lock);
+		suspend_time += suspend_time_ms();
+		display_on = is_display_on();
+		suspended = false;
+		/* Reset the suspend_start when gpu resumes */
+		suspend_start = 0;
+		spin_unlock(&suspend_lock);
+
 	case DEVFREQ_GOV_INTERVAL:
 		/* ignored, this governor doesn't use polling */
 	default:

@@ -84,10 +84,12 @@ zinstall install:
 %.dtb: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
 
+.PHONY: dtbs
 dtbs: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts dtbs
 	$(Q)$(MAKE) $(build)=$(boot)/dts/qcom dtbs
 	$(Q)$(MAKE) $(build)=$(boot)/dts/huawei dtbs
+	@true
 
 PHONY += vdso_install
 vdso_install:

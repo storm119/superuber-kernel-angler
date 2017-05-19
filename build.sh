@@ -12,10 +12,10 @@ clear
 THREAD="-j$(grep -c ^processor /proc/cpuinfo)"
 KERNEL="Image"
 DTBIMAGE="dtb"
-DEFCONFIG="angler_defconfig"
+DEFCONFIG="kylo_defconfig"
 
 # Kernel Details
-VER=".R15.angler."
+VER=".R1.angler."
 
 # Paths
 KERNEL_DIR=`pwd`
@@ -80,7 +80,7 @@ while read -p "Do you want to use UBERTC(1-3) or Linaro(4-6)? " echoice
 do
 case "$echoice" in
 	1 )
-		export CROSS_COMPILE=${HOME}/android/uberbuild/out/aarch64-linux-android-4.9-kernel/bin/aarch64-linux-android-
+		export CROSS_COMPILE=${HOME}/android/uberbuild/out/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 		TC="UBER4.9"
 		echo
 		echo "Using UBERTC 4.9"

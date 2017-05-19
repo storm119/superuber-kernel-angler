@@ -15,7 +15,7 @@ DTBIMAGE="dtb"
 DEFCONFIG="kylo_defconfig"
 
 # Kernel Details
-VER=".R3.angler."
+VER=".R4.angler."
 
 # Paths
 KERNEL_DIR=`pwd`

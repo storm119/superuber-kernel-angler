@@ -49,6 +49,7 @@ config ZEN_INTERACTIVE
 	  --- Block Layer ----------------------------------------
 
 	    Block Layer Queue Depth........: 128    -> 512
+	    Default MQ scheduler......: mq-deadline -> bfq
 
 	  --- CPU Scheduler (CFS) --------------------------------
 
@@ -57,7 +58,7 @@ config ZEN_INTERACTIVE
 	    Wakeup granularity.............:   1    ->   0.5  ms
 	    CPU migration cost.............:   0.5  ->   0.25 ms
 	    Bandwidth slice size...........:   5    ->   3    ms
-	    Ondemand downscaling factor....:   1    ->  10
+	    Ondemand fine upscaling limit..:  95 %  ->  85 %
 
 	  --- CPU Scheduler (MuQSS) ------------------------------
 
@@ -65,8 +66,6 @@ config ZEN_INTERACTIVE
 	    ISO task max realtime use......:  70 %  ->  25 %
 	    Ondemand coarse upscaling limit:  80 %  ->  45 %
 	    Ondemand fine upscaling limit..:  95 %  ->  45 %
-	    Ondemand min upscaling limit...:   1 %  ->   6 %
-	    Ondemand downscaling factor....:   1    ->  10
 
 config BROKEN
 	bool

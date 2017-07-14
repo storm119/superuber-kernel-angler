@@ -3,8 +3,8 @@ PDesireAudio Audio Driver for WCD9330
 Author: Tristan Marsell, Team DevElite
 Contact: tristan.marsell@t-online.de
 
-Current Version: 10.1
-Codename: Yandere Audio
+Current Version: 11.0
+Codename: Auralia
 
 INTRODUCTION
 -------------
@@ -18,41 +18,42 @@ Two modes are included:
 		-enable CLSAB streams to minimize distortion on high and low frequencies 
 		-disable all compander streams (COMP0, COMP1, etc.) to reduce distortion
 		-disable all decimator streams (DEC0, DEC1, etc.) to disable cut-offs on audio
-		-Set Ultra High Quality Audio mode on even when frequency is not 192kHz 24bit
 		-Microphone dynamic High Pass Filter bypass
 		-little bit power saving due less streams
 		-Set default amperages higher on SPKDRV 
 		-Dynamic to improve power usage
-		-Static mode included
-		
-		
-	PDesireAudio Advanced Mode:
-	Works in combination with PDesireAudio Ultra High Quality Mode
-	Main Features:
-		-reset compander streams
+		-API Block/Static mode included
+		-Compander deadwriting now available
+		-Buffer Increase for LPA
+
+	Fixed:
+	-Format set to right position and declaration (CAF, I don't know what you have done, but that is not good)
 		
 		
 
 ACCESSIBILITY & API
 --------------------
-PDesireAudio UHQA & Advanced Mode are on by default, to change that
-change the value on /sys/modules/snd_soc_wcd9330/uhqa_mode_pdesireaudio to 0
-in your filesystem
+PDesireAudio Mode is on by default, to change that
+change the value on /sys/modules/snd_soc_wcd9330/PDesireAudio to 0
+in your sysfs
 
 If you want to implement the switch in a code for kernel:
 
 Header file needs to be imported:
-#include <linux/pdesireaudio/api.h>
+#include <sound/pdesireaudio/api.h>
 
 API DESCRIPTION:
 
-	enable_pdesireaudio();
+	pdesireaudio_is_enabled()
+	returns 1 if it is enabled and 0 if it is not
+
+	enable_pdesireaudio()
 	Enable PDesireAudio and re-init PDesireAudio
 	
-	disable_pdesireaudio();
+	disable_pdesireaudio()
 	Disable PDesireAudio and re-init PDesireAudio
 	
-	reinit_pdesireaudio();
+	reinit_pdesireaudio()
 	Re-init PDesireAudio
 	
 	static_mode_pdesireaudio(true/false);

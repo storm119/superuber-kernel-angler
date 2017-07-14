@@ -21,7 +21,7 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/switch.h>
-#include <linux/pdesireaudio/api.h>
+#include <sound/pdesireaudio/api.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>

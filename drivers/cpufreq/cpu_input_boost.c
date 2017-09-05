@@ -771,6 +771,8 @@ static int __init cpu_ib_init(void)
 		goto free_mem;
 	}
 
+	set_boost_bit(b, DRIVER_ENABLED);
+
 	return 0;
 
 input_unregister:

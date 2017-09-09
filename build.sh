@@ -15,20 +15,20 @@ DTBIMAGE="dtb"
 DEFCONFIG="kylo_defconfig"
 
 # Kernel Details
-VER=".R9.angler."
+VER=".R9.angler"
 
 # Paths
 KERNEL_DIR=`pwd`
-REPACK_DIR="${HOME}/android/AK-OnePone-AnyKernel2"
-PATCH_DIR="${HOME}/android/AK-OnePone-AnyKernel2/patch"
-MODULES_DIR="${HOME}/android/AK-OnePone-AnyKernel2/modules"
-ZIP_MOVE="${HOME}/android/AK-releases"
-ZIMAGE_DIR="${HOME}/android/angler/arch/arm64/boot/"
+REPACK_DIR="${HOME}/My-Projects/keRneL/anykernel2"
+PATCH_DIR="${HOME}/My-Projects/keRneL/anykernel2/patch"
+MODULES_DIR="${HOME}/My-Projects/keRneL/anykernel2/modules"
+ZIP_MOVE="${HOME}/My-Projects/keRneL/hybridubertc-ouT-oReO"
+ZIMAGE_DIR="${HOME}/My-Projects/ROSiP/angler/arch/arm64/boot/"
 
 # Functions
 function clean_all {
 		rm -rf $MODULES_DIR/*
-		cd ~/android/angler/out/kernel
+		cd ~/My-Projects/ROSiP/angler/out/kernel
 		rm -rf $DTBIMAGE
 		git reset --hard > /dev/null 2>&1
 		git clean -f -d > /dev/null 2>&1
@@ -55,12 +55,12 @@ function make_dtb {
 
 
 function make_boot {
-		cp -vr $ZIMAGE_DIR/Image.gz-dtb ~/android/AnyKernel2/zImage
+		cp -vr $ZIMAGE_DIR/Image.gz-dtb ~/My-Projects/keRneL/anykernel2/zImage
 }
 
 
 function make_zip {
-		cd ~/android/AnyKernel2
+		cd ~/My-Projects/keRneL/anykernel2
 		zip -r9 `echo $AK_VER`.zip *
 		mv  `echo $AK_VER`.zip $ZIP_MOVE
 		cd $KERNEL_DIR
@@ -76,49 +76,21 @@ echo "Making Kylo Kernel:"
 echo "-----------------"
 echo -e "${restore}"
 
-while read -p "Do you want to use UBERTC(1-3) or Linaro(4-6)? " echoice
+while read -p "Do you want to use UBERTC(1-2)? " echoice
 do
 case "$echoice" in
 	1 )
-		export CROSS_COMPILE=${HOME}/android/uberbuild/out/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-		TC="UBER4.9"
-		echo
-		echo "Using UBERTC 4.9"
-		break
-		;;
-	2 )
-		export CROSS_COMPILE=${HOME}/android/uberbuild/out/aarch64-linux-android-5.3-kernel/bin/aarch64-linux-android-
-		TC="UBER5.3"
-		echo
-		echo "Using UBERTC 5.3"
-		break
-		;;
-	3 )
-		export CROSS_COMPILE=${HOME}/android/uberbuild/out/aarch64-linux-android-6.x/bin/aarch64-linux-android-
+		export CROSS_COMPILE=${HOME}/My-Projects/ROSiP/aarch64-linux-android-6.x/bin/aarch64-linux-android-
 		TC="UBER6.X"
 		echo
 		echo "Using UBERTC 6.0"
 		break
 		;;
-	4 )
-		export CROSS_COMPILE=${HOME}/android/linarobuild/out/aarch64-linux-android-4.9-kernel/bin/aarch64-linux-android-
-		TC="LINARO4.9"
+	2 )
+		export CROSS_COMPILE=${HOME}/My-Projects/ROSiP/aarch64-linux-android-7.x/bin/aarch64-linux-android-
+		TC="UBER7.X"
 		echo
-		echo "Using Linaro 4.9"
-		break
-		;;
-	5 )
-		export CROSS_COMPILE=${HOME}/android/linarobuild/out/aarch64-linux-android-5.3-kernel/bin/aarch64-linux-android-
-		TC="LINARO5.3"
-		echo
-		echo "Using Linaro 5.3"
-		break
-		;;
-	6 )
-		export CROSS_COMPILE=${HOME}/android/linarobuild/out/aarch64-linux-android-6.0-kernel/bin/aarch64-linux-android-
-		TC="LINARO6.0"
-		echo
-		echo "Using Linaro 6.0"
+		echo "Using UBERTC 7.0"
 		break
 		;;
 	* )
@@ -130,14 +102,14 @@ esac
 done
 
 # Vars
-BASE_AK_VER="Kylo"
+BASE_AK_VER="Kylo-HYBRIDUBERTC"
 AK_VER="$BASE_AK_VER$VER"
 export LOCALVERSION=~`echo $AK_VER`
 export LOCALVERSION=~`echo $AK_VER`
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_USER=DespairFactor
-export KBUILD_BUILD_HOST=DarkRoom
+export KBUILD_BUILD_USER=storm119
+export KBUILD_BUILD_HOST=LMint
 
 echo
 

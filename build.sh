@@ -15,15 +15,15 @@ DTBIMAGE="dtb"
 DEFCONFIG="kylo_defconfig"
 
 # Kernel Details
-VER=".R9.angler"
+VER="-O-R2.angler"
 
 # Paths
 KERNEL_DIR=`pwd`
 REPACK_DIR="${HOME}/My-Projects/keRneL/anykernel2"
 PATCH_DIR="${HOME}/My-Projects/keRneL/anykernel2/patch"
 MODULES_DIR="${HOME}/My-Projects/keRneL/anykernel2/modules"
-ZIP_MOVE="${HOME}/My-Projects/keRneL/hybridubertc-ouT-oReO"
 ZIMAGE_DIR="${HOME}/My-Projects/ROSiP/angler/arch/arm64/boot/"
+ZIP_MOVE="${HOME}/My-Projects/keRneL/hybridubertc-ouT-oReO"
 
 # Functions
 function clean_all {

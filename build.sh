@@ -15,7 +15,7 @@ DTBIMAGE="dtb"
 DEFCONFIG="kylo_defconfig"
 
 # Kernel Details
-VER="-O-R3.angler"
+VER="-O-U1.angler"
 
 # Paths
 KERNEL_DIR=`pwd`
@@ -102,7 +102,7 @@ esac
 done
 
 # Vars
-BASE_AK_VER="Kylo-HYBRIDUBERTC"
+BASE_AK_VER="Kylo-SUPERUBER"
 AK_VER="$BASE_AK_VER$VER"
 export LOCALVERSION=~`echo $AK_VER`
 export LOCALVERSION=~`echo $AK_VER`

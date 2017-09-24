@@ -28,6 +28,10 @@ struct devfreq_msm_adreno_tz_data {
 	struct {
 		s64 total_time;
 		s64 busy_time;
+#if 1
+		int last_level;
+		int cycles_keeping_level;
+#endif
 	} bin;
 	struct {
 		u64 total_time;

@@ -154,15 +154,9 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
 	static const struct super_operations default_op;
 
 	if (s) {
-		if (security_sb_alloc(s)) {
-			/*
-			 * We cannot call security_sb_free() without
-			 * security_sb_alloc() succeeding. So bail out manually
-			 */
-			kfree(s);
-			s = NULL;
-			goto out;
-		}
+		if (security_sb_alloc(s))
+			goto out_free_sb;
+
 		if (init_sb_writers(s, type))
 			goto err_out;
 		s->s_flags = flags;

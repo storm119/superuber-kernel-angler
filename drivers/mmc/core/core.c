@@ -541,6 +541,26 @@ static void mmc_wait_data_done(struct mmc_request *mrq)
 	context_info->is_done_rcv = true;
 	wake_up_interruptible(&context_info->wait);
 }
+
+/**
+ * mmc_start_idle_time_bkops() - check if a non urgent BKOPS is
+ * needed
+ * @work:	The idle time BKOPS work
+ */
+void mmc_start_idle_time_bkops(struct work_struct *work)
+{
+	struct mmc_card *card = container_of(work, struct mmc_card,
+			bkops_info.dw.work);
+
+	/*
+	 * Prevent a race condition between mmc_stop_bkops and the delayed
+	 * BKOPS work in case the delayed work is executed on another CPU
+	 */
+	if (card->bkops_info.cancel_delayed_work)
+		return;
+
+	mmc_start_bkops(card, false);
+}
 EXPORT_SYMBOL(mmc_start_idle_time_bkops);
 
 static void mmc_wait_done(struct mmc_request *mrq)

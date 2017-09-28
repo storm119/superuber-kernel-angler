@@ -234,7 +234,7 @@ enum {
 #define MAX_DISCARD_BLOCKS(sbi)		BLKS_PER_SEC(sbi)
 #define DISCARD_ISSUE_RATE		8
 #define DEF_CP_INTERVAL			60	/* 60 secs */
-#define DEF_IDLE_INTERVAL		5	/* 5 secs */
+#define DEF_IDLE_INTERVAL		120	/* 2 mins */
 
 struct cp_control {
 	int reason;
@@ -2466,7 +2466,8 @@ int f2fs_map_blocks(struct inode *inode, struct f2fs_map_blocks *map,
 int f2fs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 			u64 start, u64 len);
 void f2fs_set_page_dirty_nobuffers(struct page *page);
-void f2fs_invalidate_page(struct page *page, unsigned long int offset);
+void f2fs_invalidate_page(struct page *page, unsigned int offset,
+				unsigned int length);
 int f2fs_release_page(struct page *page, gfp_t wait);
 #ifdef CONFIG_MIGRATION
 int f2fs_migrate_page(struct address_space *mapping, struct page *newpage,

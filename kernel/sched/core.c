@@ -1184,8 +1184,7 @@ static int __init set_sched_same_power_cost_cpus(char *str)
 		return -EINVAL;
 	}
 
-	scnprintf(buf, sizeof(buf), "%*pbl",
-			cpumask_pr_args(sched_same_pwr_cost_cpus));
+	cpulist_scnprintf(buf, sizeof(buf), sched_same_pwr_cost_cpus);
 	if (!cpumask_empty(sched_same_pwr_cost_cpus))
 		have_sched_same_pwr_cost_cpus = true;
 	return 0;

@@ -243,7 +243,7 @@ HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize 
+HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize 
 endif
 
 # Decide whether to build built-in, modular, or both.
@@ -374,15 +374,15 @@ LINUXINCLUDE    := \
 		$(USERINCLUDE)
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
-KBUILD_CPPFLAGS := -D__KERNEL__ -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
+KBUILD_CPPFLAGS := -D__KERNEL__ -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 else
 KBUILD_CPPFLAGS := -D__KERNEL__
 endif
 
 KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -Wno-bool-compare -Wno-unused-const-variable \
+		   -fno-strict-aliasing -fno-common -Wno-unused-const-variable \
 		   -Werror-implicit-function-declaration -Wno-unused-variable -Wno-misleading-indentation \
-		   -Wno-format-security -Wno-shift-overflow -Wno-maybe-uninitialized \
+		   -Wno-format-security -Wno-overflow \
                    -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
                    -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize -ffast-math \
                    -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
@@ -391,8 +391,8 @@ KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs 
                    -std=gnu89
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
-KBUILD_AFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
-KBUILD_CFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
+KBUILD_AFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
+KBUILD_CFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 endif
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__

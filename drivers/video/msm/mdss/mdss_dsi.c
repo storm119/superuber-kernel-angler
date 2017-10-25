@@ -32,10 +32,6 @@
 
 #define XO_CLK_RATE	19200000
 
-#ifdef CONFIG_STATE_NOTIFIER
-#include <linux/state_notifier.h>
-#endif
-
 static struct dsi_drv_cm_data shared_ctrl_data;
 
 static int mdss_dsi_pinctrl_set_state(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
@@ -1500,9 +1496,6 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 			rc = mdss_dsi_unblank(pdata);
 		pdata->panel_info.esd_rdy = true;
 		lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
-#ifdef CONFIG_STATE_NOTIFIER
-		state_resume();
-#endif
 		break;
 	case MDSS_EVENT_BLANK:
 		lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
@@ -1518,9 +1511,6 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 			rc = mdss_dsi_blank(pdata, power_state);
 		rc = mdss_dsi_off(pdata, power_state);
 		lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
-#ifdef CONFIG_STATE_NOTIFIER
-		state_suspend();
-#endif
 		break;
 	case MDSS_EVENT_CONT_SPLASH_FINISH:
 		if (ctrl_pdata->off_cmds.link_state == DSI_LP_MODE)

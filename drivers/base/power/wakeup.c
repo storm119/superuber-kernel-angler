@@ -28,8 +28,6 @@ static bool enable_wlan_wake_ws = true;
 module_param(enable_wlan_wake_ws, bool, 0644);
 static bool enable_bluedroid_timer_ws = true;
 module_param(enable_bluedroid_timer_ws, bool, 0644);
-static bool enable_ipa_ws = true;
-module_param(enable_ipa_ws, bool, 0644);
 
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
@@ -497,9 +495,7 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 		(!enable_wlan_wake_ws &&
 			!strcmp(ws->name, "wlan_wake")) ||
 		(!enable_bluedroid_timer_ws &&
-			!strcmp(ws->name, "bluedroid_timer")) ||
-		(!enable_ipa_ws &&
-			!strcmp(ws->name, "IPA_WS")))) {
+			!strcmp(ws->name, "bluedroid_timer")))) {
 		/*
 		 * let's try and deactivate this wakeup source since the user
 		 * clearly doesn't want it. The user is responsible for any

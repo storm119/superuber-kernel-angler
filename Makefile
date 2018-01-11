@@ -239,6 +239,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
+GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
 ifdef CONFIG_CC_OPTIMIZE_ALOT
@@ -346,11 +348,10 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
-GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
 CFLAGS_MODULE   = $(GRAPHITE)
 AFLAGS_MODULE   = $(GRAPHITE)
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= $(GRAPHITE) -fmodulo-sched -fmodulo-sched-allow-regmoves -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fgcse-after-reload -fgcse-lm -fgcse-sm -fsched-spec-load -ffast-math -fsingle-precision-constant -fpredictive-commoning 
+CFLAGS_KERNEL	= $(GRAPHITE) -fmodulo-sched -fmodulo-sched-allow-regmoves -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fgcse-after-reload -fgcse-lm -fgcse-sm -fsched-spec-load -ffast-math -fsingle-precision-constant -fpredictive-commoning
 AFLAGS_KERNEL	= $(GRAPHITE)
 endif
 CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
@@ -379,15 +380,12 @@ else
 KBUILD_CPPFLAGS := -D__KERNEL__
 endif
 
-KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -Wno-unused-const-variable \
-		   -Werror-implicit-function-declaration -Wno-unused-variable -Wno-misleading-indentation \
-		   -Wno-format-security -Wno-overflow \
-                   -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
-                   -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize -ffast-math \
-                   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
-		   -fno-aggressive-loop-optimizations \
-		   -fno-delete-null-pointer-checks \
+KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -Wno-misleading-indentation -Wno-bool-operation \
+		   -fno-strict-aliasing -fno-common -Wno-bool-compare -Wno-unused-const-variable -Wno-nonnull -Wno-switch-unreachable \
+		   -Werror-implicit-function-declaration -Wno-unused-variable -Wno-logical-not-parentheses -Wno-format-truncation -Wno-format-overflow -Wno-array-bounds \
+		   -Wno-format-security -Wno-memset-transposed-args -Wno-switch-bool -Wno-duplicate-decl-specifier -Wno-overflow \
+		   -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
+		   -fno-delete-null-pointer-checks -Wno-maybe-uninitialized -Wno-memset-elt-size -Wno-int-in-bool-context \
                    -std=gnu89
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT

@@ -239,7 +239,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-GRAPHITE	= -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+GRAPHITE	 = -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
@@ -334,9 +334,9 @@ CC		= $(CCACHE) $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+STRIP	= $(CROSS_COMPILE)strip
+OBJCOPY	= $(CROSS_COMPILE)objcopy
+OBJDUMP	= $(CROSS_COMPILE)objdump
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
@@ -363,7 +363,7 @@ USERINCLUDE    := \
 		-Iarch/$(hdr-arch)/include/generated/uapi \
 		-I$(srctree)/include/uapi \
 		-Iinclude/generated/uapi \
-                -include $(srctree)/include/linux/kconfig.h
+        -include $(srctree)/include/linux/kconfig.h
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -381,19 +381,19 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 endif
 
 KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -Wno-misleading-indentation -Wno-bool-operation \
-		   -fno-strict-aliasing -fno-common -Wno-bool-compare -Wno-unused-const-variable -Wno-nonnull -Wno-switch-unreachable \
-		   -Werror-implicit-function-declaration -Wno-unused-variable -Wno-logical-not-parentheses -Wno-format-truncation -Wno-format-overflow -Wno-array-bounds \
-		   -Wno-format-security -Wno-memset-transposed-args -Wno-switch-bool -Wno-duplicate-decl-specifier -Wno-overflow \
-		   -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
-		   -fno-delete-null-pointer-checks -Wno-maybe-uninitialized -Wno-memset-elt-size -Wno-int-in-bool-context \
-                   -std=gnu89
+		 -fno-strict-aliasing -fno-common -Wno-bool-compare -Wno-unused-const-variable -Wno-nonnull -Wno-switch-unreachable \
+		 -Werror-implicit-function-declaration -Wno-unused-variable -Wno-logical-not-parentheses -Wno-format-truncation -Wno-format-overflow -Wno-array-bounds \
+		 -Wno-format-security -Wno-memset-transposed-args -Wno-switch-bool -Wno-duplicate-decl-specifier -Wno-overflow \
+		 -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
+		 -fno-delete-null-pointer-checks -Wno-maybe-uninitialized -Wno-memset-elt-size -Wno-int-in-bool-context \
+         -std=gnu89
 
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 KBUILD_AFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 KBUILD_CFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 endif
 
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS         := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
@@ -447,7 +447,7 @@ outputmakefile:
 ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
+	$(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
 endif
 
 # Support for using generic headers in asm-generic
@@ -474,7 +474,7 @@ no-dot-config-targets := clean mrproper distclean \
 			 kernelversion %src-pkg
 
 config-targets := 0
-mixed-targets  := 0
+mixed-targets := 0
 dot-config     := 1
 
 ifneq ($(filter $(no-dot-config-targets), $(MAKECMDGOALS)),)
@@ -569,8 +569,8 @@ include/config/auto.conf:
 	$(Q)test -e include/generated/autoconf.h -a -e $@ || (		\
 	echo >&2;							\
 	echo >&2 "  ERROR: Kernel configuration is invalid.";		\
-	echo >&2 "         include/generated/autoconf.h or $@ are missing.";\
-	echo >&2 "         Run 'make oldconfig && make prepare' on kernel src to fix it.";	\
+	echo >&2 "  include/generated/autoconf.h or $@ are missing.";\
+	echo >&2 "  Run 'make oldconfig && make prepare' on kernel src to fix it.";	\
 	echo >&2 ;							\
 	/bin/false)
 

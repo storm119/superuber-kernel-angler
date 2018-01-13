@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2012 Brandon Berhent <bbedward@gmail.com>
  *           (C) 2014 LoungeKatt <twistedumbrella@gmail.com>
- *				 2015 Fixes to stop crashing on 3.10 by Matthew Alex <matthewalex@outlook.com>
+ *           (C) 2015 Fixes to stop crashing on 3.10 by Matthew Alex <matthewalex@outlook.com>
  * FCFS, dispatches are back-inserted, deadlines ensure fairness.
  * Should work best with devices where there is no travel delay.
  */
@@ -166,7 +166,7 @@ static int zen_init_queue(struct request_queue *q, struct elevator_type *e)
     if (!eq)
         return -ENOMEM;
 
-	zdata = kmalloc_node(sizeof(*zdata), GFP_KERNEL, q->node);
+    zdata = kmalloc_node(sizeof(*zdata), GFP_KERNEL, q->node);
     if (!zdata) {
         kobject_put(&eq->kobj);
         return -ENOMEM;

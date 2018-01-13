@@ -241,12 +241,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 GRAPHITE	 = -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
 
-HOSTCC       = $(CCACHE) gcc
-HOSTCXX      = $(CCACHE) g++
-ifdef CONFIG_CC_OPTIMIZE_ALOT
-HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize 
-endif
+HOSTCC       = gcc
+HOSTCXX      = g++
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu89 $(GRAPHITE)
+HOSTCXXFLAGS = -Ofast $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -330,7 +328,7 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-CC		= $(CCACHE) $(CROSS_COMPILE)gcc
+CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -347,15 +345,30 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 
-ifdef CONFIG_CC_OPTIMIZE_ALOT
-CFLAGS_MODULE   = $(GRAPHITE)
-AFLAGS_MODULE   = $(GRAPHITE)
-LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= $(GRAPHITE) -fmodulo-sched -fmodulo-sched-allow-regmoves -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fgcse-after-reload -fgcse-lm -fgcse-sm -fsched-spec-load -ffast-math -fsingle-precision-constant -fpredictive-commoning
-AFLAGS_KERNEL	= $(GRAPHITE)
-endif
+CFLAGS_MODULE   =
+AFLAGS_MODULE   =
+LDFLAGS_MODULE  =
+CFLAGS_KERNEL	=
+AFLAGS_KERNEL	=
 CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
 
+# fall back to -march=armv8-a in case the compiler isn't compatible 
+# with -mcpu and -mtune
+# supercharge SuperUbeR
+ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crypto+crc -mtune=cortex-a57.cortex-a53
+GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
+ -g0 \
+ -DNDEBUG \
+ -fgraphite \
+ -fgraphite-identity \
+ -fomit-frame-pointer \
+ -fmodulo-sched-allow-regmoves \
+ -fivopts \
+ -floop-block \
+ -floop-interchange \
+ -floop-strip-mine \
+ -ftree-loop-distribution \
+ -ftree-loop-linear
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
@@ -374,28 +387,20 @@ LINUXINCLUDE    := \
 		-Iinclude \
 		$(USERINCLUDE)
 
-ifdef CONFIG_CC_OPTIMIZE_ALOT
-KBUILD_CPPFLAGS := -D__KERNEL__ -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
-else
 KBUILD_CPPFLAGS := -D__KERNEL__
-endif
 
-KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -Wno-misleading-indentation -Wno-bool-operation \
-		 -fno-strict-aliasing -fno-common -Wno-bool-compare -Wno-unused-const-variable -Wno-nonnull -Wno-switch-unreachable \
-		 -Werror-implicit-function-declaration -Wno-unused-variable -Wno-logical-not-parentheses -Wno-format-truncation -Wno-format-overflow -Wno-array-bounds \
-		 -Wno-format-security -Wno-memset-transposed-args -Wno-switch-bool -Wno-duplicate-decl-specifier -Wno-overflow \
-		 -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
-		 -fno-delete-null-pointer-checks -Wno-maybe-uninitialized -Wno-memset-elt-size -Wno-int-in-bool-context \
-         -std=gnu89
+KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		 -fno-strict-aliasing -fno-common \
+		 -Werror-implicit-function-declaration -Wno-nonnull \
+		 -Wno-format-security \
+		 -fno-delete-null-pointer-checks \
+         -std=gnu89 $(GEN_OPT_FLAGS)
 
-ifdef CONFIG_CC_OPTIMIZE_ALOT
-KBUILD_AFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
-KBUILD_CFLAGS_KERNEL := $(GRAPHITE) -O3 -fgcse-lm -fgcse-sm -fgcse-las -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
-endif
-
-KBUILD_AFLAGS         := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
+KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS)
+KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS)
+KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
+KBUILD_CFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -601,10 +606,8 @@ KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
-endif
-
-ifdef CONFIG_CC_OPTIMIZE_ALOT
-KBUILD_CFLAGS	+= $(GRAPHITE) -O3
+else
+KBUILD_CFLAGS	+= -Ofast -fno-store-merging
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one

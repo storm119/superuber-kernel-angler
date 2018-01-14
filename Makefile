@@ -239,12 +239,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-GRAPHITE	 = -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+GRAPHITE	 = -fgraphite -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu89 $(GRAPHITE)
-HOSTCXXFLAGS = -Ofast $(GRAPHITE)
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -ftree-vectorize -std=gnu89 $(GRAPHITE)
+HOSTCXXFLAGS = -Ofast -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -355,8 +355,8 @@ CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
 # fall back to -march=armv8-a in case the compiler isn't compatible 
 # with -mcpu and -mtune
 # supercharge SuperUbeR
-ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crypto+crc -mtune=cortex-a57.cortex-a53
-GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
+ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
+GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a+crc+crypto) \
  -g0 \
  -DNDEBUG \
  -fgraphite \
@@ -368,7 +368,8 @@ GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
  -floop-interchange \
  -floop-strip-mine \
  -ftree-loop-distribution \
- -ftree-loop-linear
+ -ftree-loop-linear \
+ -ftree-vectorize
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
@@ -394,7 +395,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		 -Werror-implicit-function-declaration -Wno-nonnull \
 		 -Wno-format-security \
 		 -fno-delete-null-pointer-checks \
-         -std=gnu89 $(GEN_OPT_FLAGS)
+		 -std=gnu89 $(GEN_OPT_FLAGS)
 
 KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS)
 KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS)

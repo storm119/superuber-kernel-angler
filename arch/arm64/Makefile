@@ -19,8 +19,8 @@ LIBGCC 		:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
 
 KBUILD_DEFCONFIG := defconfig
 
-ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crypto+crc -mtune=cortex-a57.cortex-a53
-GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
+ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
+GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a+crc+crypto) \
  -g0 \
  -DNDEBUG \
  -fgraphite \
@@ -32,7 +32,8 @@ GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a) \
  -floop-interchange \
  -floop-strip-mine \
  -ftree-loop-distribution \
- -ftree-loop-linear
+ -ftree-loop-linear \
+ -ftree-vectorize
 
 KBUILD_CFLAGS	+= -mgeneral-regs-only
 KBUILD_CFLAGS	+= -fno-pic

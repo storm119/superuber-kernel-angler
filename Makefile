@@ -243,8 +243,8 @@ GRAPHITE	 = -fgraphite -fgraphite-identity -floop-parallelize-all -ftree-loop-li
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -ftree-vectorize -std=gnu89 $(GRAPHITE)
-HOSTCXXFLAGS = -Ofast -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize $(GRAPHITE)
+HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -std=gnu89
+HOSTCXXFLAGS = -O3 -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -345,11 +345,11 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 
-CFLAGS_MODULE   =
-AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
-AFLAGS_KERNEL	=
+CFLAGS_MODULE   = $(GRAPHITE)
+AFLAGS_MODULE   = $(GRAPHITE)
+LDFLAGS_MODULE  = --strip-debug
+CFLAGS_KERNEL	= $(GRAPHITE) -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fgcse-after-reload -fgcse-lm -fgcse-sm -fsched-spec-load -ffast-math -fsingle-precision-constant -fpredictive-commoning
+AFLAGS_KERNEL	= $(GRAPHITE)
 CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
 
 # fall back to -march=armv8-a in case the compiler isn't compatible 
@@ -357,18 +357,13 @@ CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
 # supercharge SuperUbeR
 ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
 GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a+crc+crypto) \
- -g0 \
- -DNDEBUG \
- -fgraphite \
- -fgraphite-identity \
- -fomit-frame-pointer \
- -fmodulo-sched-allow-regmoves \
+ -O3 \
+ -DNDEBUG -g0 \
+ -ffast-math \
+ -fsched-spec-load \
+ -fforce-addr \
+ -fsingle-precision-constant \
  -fivopts \
- -floop-block \
- -floop-interchange \
- -floop-strip-mine \
- -ftree-loop-distribution \
- -ftree-loop-linear \
  -ftree-vectorize
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
@@ -390,18 +385,19 @@ LINUXINCLUDE    := \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		 -fno-strict-aliasing -fno-common \
 		 -Werror-implicit-function-declaration -Wno-nonnull \
 		 -Wno-format-security \
 		 -fno-delete-null-pointer-checks \
-		 -std=gnu89 $(GEN_OPT_FLAGS)
+		 -std=gnu89 \
+		 $(GEN_OPT_FLAGS)
 
-KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS)
-KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS)
+KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS) $(GRAPHITE)
+KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS) $(GRAPHITE)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
-KBUILD_CFLAGS_MODULE  := -DMODULE $(GEN_OPT_FLAGS)
+KBUILD_AFLAGS_MODULE  := -DMODULE
+KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -608,7 +604,7 @@ KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -Ofast -fno-store-merging
+KBUILD_CFLAGS	+= $(GRAPHITE) -O3 -fno-store-merging
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one

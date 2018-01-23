@@ -21,18 +21,13 @@ KBUILD_DEFCONFIG := defconfig
 
 ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
 GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a+crc+crypto) \
- -g0 \
- -DNDEBUG \
- -fgraphite \
- -fgraphite-identity \
- -fomit-frame-pointer \
- -fmodulo-sched-allow-regmoves \
+ -O3 \
+ -DNDEBUG -g0 \
+ -ffast-math \
+ -fsched-spec-load \
+ -fforce-addr \
+ -fsingle-precision-constant \
  -fivopts \
- -floop-block \
- -floop-interchange \
- -floop-strip-mine \
- -ftree-loop-distribution \
- -ftree-loop-linear \
  -ftree-vectorize
 
 KBUILD_CFLAGS	+= -mgeneral-regs-only

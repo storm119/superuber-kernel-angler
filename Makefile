@@ -239,12 +239,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-GRAPHITE	 = -fgraphite -fgraphite-identity -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
-
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = $(GRAPHITE) -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -std=gnu89
-HOSTCXXFLAGS = -O3 -fsched-spec-load -fforce-addr -fsingle-precision-constant -march=armv8-a+crc+crypto -mtune=cortex-a57.cortex-a53 -ftree-vectorize
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu89 $(GRAPHITE)
+HOSTCXXFLAGS = -Ofast $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -324,7 +322,15 @@ MAKEFLAGS += --include-dir=$(srctree)
 $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
-# Make variables (CC, etc...)
+# SuperUbeR Extra flags
+GRAPHITE        = -fgraphite -fgraphite-identity -fivopts -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+OPTS			= -g0 -DNDEBUG -fomit-frame-pointer -ftree-vectorize -fgcse-lm -fgcse-sm -fgcse-las 
+CORTEX_OPTS    	= -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
+GEN_OPT_FLAGS 	= $(call cc-option,$(CORTEX_OPTS),-march=armv8-a+crc+crypto)
+GCC_OPTS		= $(OPTS) $(GRAPHITE) $(CORTEX_OPTS)
+GCC7WARNINGS	= -Wno-nonnull
+
+# Make variables (CC, etc...) 
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
@@ -332,9 +338,9 @@ CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
-STRIP	= $(CROSS_COMPILE)strip
-OBJCOPY	= $(CROSS_COMPILE)objcopy
-OBJDUMP	= $(CROSS_COMPILE)objdump
+STRIP		= $(CROSS_COMPILE)strip
+OBJCOPY		= $(CROSS_COMPILE)objcopy
+OBJDUMP		= $(CROSS_COMPILE)objdump
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
@@ -344,27 +350,13 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-
-CFLAGS_MODULE   = $(GRAPHITE)
-AFLAGS_MODULE   = $(GRAPHITE)
+CFLAGS_MODULE   =
+AFLAGS_MODULE   =
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= $(GRAPHITE) -ftree-loop-vectorize -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fgcse-after-reload -fgcse-lm -fgcse-sm -fsched-spec-load -ffast-math -fsingle-precision-constant -fpredictive-commoning
-AFLAGS_KERNEL	= $(GRAPHITE)
+CFLAGS_KERNEL	= 
+AFLAGS_KERNEL	=
 CFLAGS_GCOV     = -fprofile-arcs -ftest-coverage
 
-# fall back to -march=armv8-a in case the compiler isn't compatible 
-# with -mcpu and -mtune
-# supercharge SuperUbeR
-ARM_ARCH_OPT := -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
-GEN_OPT_FLAGS := $(call cc-option,$(ARM_ARCH_OPT),-march=armv8-a+crc+crypto) \
- -O3 \
- -DNDEBUG -g0 \
- -ffast-math \
- -fsched-spec-load \
- -fforce-addr \
- -fsingle-precision-constant \
- -fivopts \
- -ftree-vectorize
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
@@ -372,7 +364,7 @@ USERINCLUDE    := \
 		-Iarch/$(hdr-arch)/include/generated/uapi \
 		-I$(srctree)/include/uapi \
 		-Iinclude/generated/uapi \
-        -include $(srctree)/include/linux/kconfig.h
+        		-include $(srctree)/include/linux/kconfig.h
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -385,19 +377,18 @@ LINUXINCLUDE    := \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := $(GRAPHITE) -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		 -fno-strict-aliasing -fno-common \
-		 -Werror-implicit-function-declaration -Wno-nonnull \
+		 -Werror-implicit-function-declaration \
 		 -Wno-format-security \
 		 -fno-delete-null-pointer-checks \
-		 -std=gnu89 \
-		 $(GEN_OPT_FLAGS)
+		 -std=gnu89 $(GCC_OPTS) $(GCC7WARNINGS)
 
-KBUILD_AFLAGS_KERNEL := $(GEN_OPT_FLAGS) $(GRAPHITE)
-KBUILD_CFLAGS_KERNEL := $(GEN_OPT_FLAGS) $(GRAPHITE)
+KBUILD_AFLAGS_KERNEL := $(GCC_OPTS)
+KBUILD_CFLAGS_KERNEL := $(GCC_OPTS)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
+KBUILD_AFLAGS_MODULE  := -DMODULE $(GCC_OPTS) 
+KBUILD_CFLAGS_MODULE  := -DMODULE $(GCC_OPTS) 
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -589,6 +580,12 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS	+= -O3
+else
+KBUILD_CFLAGS	+= -Ofast
+endif
+
 # Disable maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 
@@ -601,12 +598,6 @@ KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 # Disable format-truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
-else
-KBUILD_CFLAGS	+= $(GRAPHITE) -O3 -fno-store-merging
-endif
-
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 
@@ -615,7 +606,6 @@ KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
-
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
 # reorder blocks reorders the control in the function

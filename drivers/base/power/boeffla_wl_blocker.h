@@ -19,5 +19,5 @@
 #define LIST_WL_DEFAULT				"IPA_WS;wlan_rx_wake;wlan_ctrl_wake;wlan_wake;bluedroid_timer;[timerfd];netmgr_wl;NETLINK"
 
 #define LENGTH_LIST_WL				255
-#define LENGTH_LIST_WL_DEFAULT		88
+#define LENGTH_LIST_WL_DEFAULT		100
 #define LENGTH_LIST_WL_SEARCH		LENGTH_LIST_WL + LENGTH_LIST_WL_DEFAULT + 5

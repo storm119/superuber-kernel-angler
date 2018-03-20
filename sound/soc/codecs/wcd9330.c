@@ -159,7 +159,7 @@ int pdesireaudio_is_enabled(void)
 
 int pdesireaudio_start(void) 
 {
-	if (!pdesireaudio_static_mode){
+	if (!pdesireaudio_static_mode && display_online){
 		pdesireaudio_api_print("Enable PDesireAudio", 2);
 		PDesireAudio = 1;
 	}
@@ -169,7 +169,7 @@ int pdesireaudio_start(void)
 
 int pdesireaudio_remove(void) 
 {
-	if (!pdesireaudio_static_mode)
+	if (!pdesireaudio_static_mode && display_online)
 	{
 		pdesireaudio_api_print("Disable PDesireAudio", 2);
 		PDesireAudio = 0;
@@ -180,7 +180,7 @@ int pdesireaudio_remove(void)
 
 int pdesireaudio_init(void) 
 {
-	if (!pdesireaudio_static_mode)
+	if (!pdesireaudio_static_mode && display_online)
 	{
 		pdesireaudio_api_print("Re-Init PDesireAudio", 2);
 
@@ -1185,14 +1185,17 @@ static int tomtom_put_iir_band_audio_mixer(
 static int tomtom_get_compander(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
-	if (PDesireAudio) {	
+	if (PDesireAudio) 
+		goto end;
+	
 	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 	int comp = ((struct soc_multi_mixer_control *)
 			kcontrol->private_value)->shift;
 	struct tomtom_priv *tomtom = snd_soc_codec_get_drvdata(codec);
 
 	ucontrol->value.integer.value[0] = tomtom->comp_enabled[comp];
-	}
+	
+end:
 	return 0;
 }
 
@@ -4542,10 +4545,11 @@ static int tomtom_hph_pa_event(struct snd_soc_dapm_widget *w,
 		return -EINVAL;
 	}
 
-	if (PDesireAudio) {
-		if (tomtom->comp_enabled[COMPANDER_1])
-			pa_settle_time = TOMTOM_HPH_PA_SETTLE_COMP_ON;
-	}
+	if (PDesireAudio)
+		return 0;
+	
+	if (tomtom->comp_enabled[COMPANDER_1])
+		pa_settle_time = TOMTOM_HPH_PA_SETTLE_COMP_ON;
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -4554,9 +4558,29 @@ static int tomtom_hph_pa_event(struct snd_soc_dapm_widget *w,
 		break;
 
 	case SND_SOC_DAPM_POST_PMU:
-		usleep_range(pa_settle_time, pa_settle_time + 1000);
-		pr_debug("%s: sleep %d us after %s PA enable\n", __func__,
-				pa_settle_time, w->name);
+		if (test_bit(HPH_DELAY_L, &tomtom->status_mask)) {
+			/*
+			 * Make sure to wait 10ms after enabling HPHL
+			 * in register 0x1AB
+			*/
+			usleep_range(pa_settle_time, pa_settle_time + 1000);
+			clear_bit(HPH_DELAY_L, &tomtom->status_mask);
+			pr_debug("%s: sleep %d us after %s PA enable\n",
+				__func__, pa_settle_time, w->name);
+		} else if (test_bit(HPH_DELAY_R, &tomtom->status_mask)) {
+			/*
+			 * Make sure to wait 10ms after enabling HPHR
+			 * in register 0x1AB
+			*/
+			usleep_range(pa_settle_time, pa_settle_time + 1000);
+			clear_bit(HPH_DELAY_R, &tomtom->status_mask);
+			pr_debug("%s: sleep %d us after %s PA enable\n",
+				__func__, pa_settle_time, w->name);
+		} else {
+			pr_err("%s: Invalid w->shift %d\n", __func__,
+				w->shift);
+			return -EINVAL;
+		}
 		if (!PDesireAudio) {
 			wcd9xxx_clsh_fsm(codec, &tomtom->clsh_d,
 						 req_clsh_state,

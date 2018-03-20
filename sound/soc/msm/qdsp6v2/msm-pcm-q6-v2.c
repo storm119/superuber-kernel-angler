@@ -309,24 +309,8 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	prtd->audio_client->perf_mode = pdata->perf_mode;
 	pr_debug("%s: perf: %x\n", __func__, pdata->perf_mode);
 
-	switch (params_format(params)) {
-	case SNDRV_PCM_FORMAT_S24_LE:
+	if (params_format(params) == SNDRV_PCM_FORMAT_S24_LE)
 		bits_per_sample = 24;
-		sample_word_size = 24;
-		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
-		bits_per_sample = 24;
-		sample_word_size = 32;
-		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
-	default:
-		bits_per_sample = 16;
-		sample_word_size = 16;
-		break;
-	}
-
-	ret = q6asm_open_write_v3(prtd->audio_client,
-				  FORMAT_LINEAR_PCM, bits_per_sample);
 
 	ret = q6asm_open_write_v2(prtd->audio_client,
 			FORMAT_LINEAR_PCM, bits_per_sample);
@@ -450,14 +434,6 @@ static int msm_pcm_capture_prepare(struct snd_pcm_substream *substream)
 		return 0;
 
 	switch (runtime->format) {
-	case SNDRV_PCM_FORMAT_S24_LE:
-		bits_per_sample = 24;
-		sample_word_size = 24;
-		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
-		bits_per_sample = 24;
-		sample_word_size = 32;
-		break;
 	case SNDRV_PCM_FORMAT_S16_LE:
 		bits_per_sample = 16;
 		break;

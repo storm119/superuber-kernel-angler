@@ -1,5 +1,4 @@
-/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
- * Copyright (C) 2017, Tristan Marsell. All rights reserved.
+/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -43,7 +42,6 @@
 #include "audio_ocmem.h"
 #include <sound/pcm.h>
 #include <sound/tlv.h>
-#include <sound/pdesireaudio/api.h>
 
 #define LPA_LR_VOL_MAX_STEPS	0x20002000
 
@@ -58,35 +56,25 @@ static struct snd_msm lpa_audio;
 
 static struct snd_pcm_hardware msm_pcm_hardware = {
 	.info =                 (SNDRV_PCM_INFO_MMAP |
-								SNDRV_PCM_INFO_BLOCK_TRANSFER |
-								SNDRV_PCM_INFO_MMAP_VALID |
-								SNDRV_PCM_INFO_INTERLEAVED |
-								SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME),
+				SNDRV_PCM_INFO_BLOCK_TRANSFER |
+				SNDRV_PCM_INFO_MMAP_VALID |
+				SNDRV_PCM_INFO_INTERLEAVED |
+				SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME),
 	.formats =              SNDRV_PCM_FMTBIT_S16_LE |
-							SNDRV_PCM_FMTBIT_S24_LE |
-							SNDRV_PCM_FMTBIT_S24_3LE,
+					SNDRV_PCM_FMTBIT_S24_LE,
 	.rates =                SNDRV_PCM_RATE_8000_192000 |
-							SNDRV_PCM_RATE_KNOT,
+					SNDRV_PCM_RATE_KNOT,
 	.rate_min =             8000,
 	.rate_max =             192000,
 	.channels_min =         1,
 	.channels_max =         2,
 	.buffer_bytes_max =     1024 * 1024,
-	.period_bytes_min =		128 * 1024,
+	.period_bytes_min =	128 * 1024,
 	.period_bytes_max =     256 * 1024,
 	.periods_min =          4,
 	.periods_max =          8,
 	.fifo_size =            0,
 };
-
-static void pdesireaudio_buffer_increase(void)
-{
-	if (pdesireaudio_is_enabled()) 
-	{
-		msm_pcm_hardware.buffer_bytes_max = 	2048 * 1024;
-		msm_pcm_hardware.period_bytes_max =     512 * 1024;
-	}
-}
 
 /* Conventional and unconventional sample rate supported */
 static unsigned int supported_sample_rates[] = {
@@ -265,7 +253,6 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 		bits_per_sample = 16;
 		break;
 
-	case SNDRV_PCM_FORMAT_S24_3LE:
 	case SNDRV_PCM_FORMAT_S24_LE:
 		bits_per_sample = 24;
 		break;
@@ -592,7 +579,7 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 
 	prtd->audio_client->perf_mode = false;
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		if (params_format(params) == SNDRV_PCM_FORMAT_S24_LE || params_format(params) == SNDRV_PCM_FORMAT_S24_3LE)
+		if (params_format(params) == SNDRV_PCM_FORMAT_S24_LE)
 			bits_per_sample = 24;
 		ret = q6asm_open_write_v2(prtd->audio_client,
 				FORMAT_LINEAR_PCM, bits_per_sample);
@@ -846,7 +833,6 @@ static int __init msm_soc_platform_init(void)
 	init_waitqueue_head(&the_locks.eos_wait);
 	init_waitqueue_head(&the_locks.write_wait);
 	init_waitqueue_head(&the_locks.read_wait);
-	pdesireaudio_buffer_increase();
 
 	return platform_driver_register(&msm_pcm_driver);
 }

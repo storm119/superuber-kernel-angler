@@ -16,8 +16,8 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
+#include "pdesireaudio.h"
 #include "wcd9xxx-common.h"
-#include <sound/pdesireaudio/api.h>
 
 #define CLSH_COMPUTE_EAR 0x01
 #define CLSH_COMPUTE_HPH_L 0x02
@@ -502,11 +502,10 @@ static void wcd9xxx_cfg_clsh_param_common(
 		{WCD9XXX_A_CDC_CLSH_B1_CTL, (0x1 << 5), (0x01 << 5)},
 		{WCD9XXX_A_CDC_CLSH_B1_CTL, (0x1 << 1), (0x01 << 1)},
 	};
-	
-	if (!pdesireaudio_is_enabled())
-		for (i = 0; i < ARRAY_SIZE(reg_set); i++)
-			snd_soc_update_bits(codec, reg_set[i].reg, reg_set[i].mask,
-								reg_set[i].val);
+
+	for (i = 0; i < ARRAY_SIZE(reg_set); i++)
+		snd_soc_update_bits(codec, reg_set[i].reg, reg_set[i].mask,
+						    reg_set[i].val);
 
 	dev_dbg(codec->dev, "%s: Programmed class H controller common parameters",
 			 __func__);
@@ -1211,6 +1210,7 @@ void pdesireaudio_uhqa_mode(struct snd_soc_codec *codec,
 		/* Enable NCP and wait until settles down */
 		if (snd_soc_update_bits(codec, WCD9XXX_A_NCP_EN, 0x01, 0x01))
 			usleep_range(NCP_SETTLE_TIME_US, NCP_SETTLE_TIME_US+10);
+		pdesireaudio_advanced_mode_enable(codec);
 	} else {
 		snd_soc_update_bits(codec, WCD9XXX_A_RX_HPH_CHOP_CTL,
 					0x20, 0x20);

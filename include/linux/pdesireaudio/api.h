@@ -11,19 +11,23 @@
  * GNU General Public License for more details.
  */
  
-#ifndef __SOUND_PDESIREAUDIO_API
-#define __SOUND_PDESIREAUDIO_API
+#include "../../../sound/soc/codecs/pdesireaudio.h"
 
-extern int pdesireaudio_is_enabled(void);
+extern void enable_pdesireaudio(void) {
+	pdesireaudio_start();
+	pdesireaudio_init();
+}
 
-extern int pdesireaudio_api_print(const char *message, int error_code); 
+extern void disable_pdesireaudio(void) {
+	pdesireaudio_remove();
+	pdesireaudio_init();
+}
 
-extern int reinit_pdesireaudio(void);
+extern void reinit_pdesireaudio(void) {
+	pdesireaudio_init();
+}
 
-extern int disable_pdesireaudio(void);
+extern void static_mode_pdesireaudio(bool enable) {
+	pdesireaudio_api_static_mode_control(enable);
+}
 
-extern int enable_pdesireaudio(void);
-
-extern void pdesireaudio_api_static_mode_control(bool enable);
-
-#endif

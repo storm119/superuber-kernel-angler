@@ -1103,13 +1103,13 @@ static int tomtom_put_iir_band_audio_mixer(
 static int tomtom_get_compander(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
-	if (uhqa_mode_pdesireaudio) {	
-	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
-	int comp = ((struct soc_multi_mixer_control *)
-			kcontrol->private_value)->shift;
-	struct tomtom_priv *tomtom = snd_soc_codec_get_drvdata(codec);
+	if (!uhqa_mode_pdesireaudio) {
+		struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+		int comp = ((struct soc_multi_mixer_control *)
+				kcontrol->private_value)->shift;
+		struct tomtom_priv *tomtom = snd_soc_codec_get_drvdata(codec);
 
-	ucontrol->value.integer.value[0] = tomtom->comp_enabled[comp];
+		ucontrol->value.integer.value[0] = tomtom->comp_enabled[comp];
 	}
 	return 0;
 }
@@ -1258,10 +1258,6 @@ static int tomtom_config_compander(struct snd_soc_dapm_widget *w,
 	pr_debug("%s: %s event %d compander %d, enabled %d", __func__,
 		 w->name, event, comp, tomtom->comp_enabled[comp]);
 
-	if (!tomtom->comp_enabled[comp])
-		return 0;
-
-
 	if (!uhqa_mode_pdesireaudio) {
 		/* Compander 0 has two channels */
 		mask = enable_mask = 0x03;
@@ -1270,84 +1266,95 @@ static int tomtom_config_compander(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		/* If EAR PA is enabled then compander should not be enabled */
-		if ((snd_soc_read(codec, TOMTOM_A_RX_EAR_EN) & 0x10) != 0) {
-			pr_debug("%s: EAR is enabled, do not enable compander\n",
-				 __func__);
+		if (!tomtom->comp_enabled[comp])
 			break;
-		}
+
+		/* PDesireAudio Compander Switch */
+		if (!uhqa_mode_pdesireaudio) {
 		
-		/* Disable Compander if PDesireAudio enabled */
-		if (uhqa_mode_pdesireaudio) {
-			pr_debug("%s: PDesireAudio is enabled, do not enable compander\n",
-					__func__);
-			break;
-		}
-		
-		/* Set compander Sample rate */
-		snd_soc_update_bits(codec,
-					TOMTOM_A_CDC_COMP0_FS_CFG + (comp * 8),
-					0x07, rate);
-		/* Set the static gain offset for HPH Path */
-		if (comp == COMPANDER_1) {
-			if (buck_mv == WCD9XXX_CDC_BUCK_MV_2P15) {
-				snd_soc_update_bits(codec,
-					TOMTOM_A_CDC_COMP0_B4_CTL + (comp * 8),
-					0x80, 0x00);
-			} else {
-				snd_soc_update_bits(codec,
-					TOMTOM_A_CDC_COMP0_B4_CTL + (comp * 8),
-					0x80, 0x80);
+			/* Set compander Sample rate */
+			snd_soc_update_bits(codec,
+						TOMTOM_A_CDC_COMP0_FS_CFG + (comp * 8),
+						0x07, rate);
+			/* Set the static gain offset for HPH Path */
+			if (comp == COMPANDER_1) {
+				if (buck_mv == WCD9XXX_CDC_BUCK_MV_2P15) {
+					snd_soc_update_bits(codec,
+						TOMTOM_A_CDC_COMP0_B4_CTL + (comp * 8),
+						0x80, 0x00);
+				} else {
+					snd_soc_update_bits(codec,
+						TOMTOM_A_CDC_COMP0_B4_CTL + (comp * 8),
+						0x80, 0x80);
+				}
 			}
-		}
+			
+			/* Enable RX interpolation path compander clocks */
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_RX_B2_CTL,
+						mask << comp_shift[comp],
+						mask << comp_shift[comp]);
+			/* Toggle compander reset bits */
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
+						mask << comp_shift[comp],
+						mask << comp_shift[comp]);
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
+						mask << comp_shift[comp], 0);
 
-		/* Enable RX interpolation path compander clocks */
-		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_RX_B2_CTL,
-					mask << comp_shift[comp],
-					mask << comp_shift[comp]);
-		/* Toggle compander reset bits */
-		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
-					mask << comp_shift[comp],
-					mask << comp_shift[comp]);
-		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
-					mask << comp_shift[comp], 0);
-
-		/* Set gain source to compander */
-		tomtom_config_gain_compander(codec, comp, true);
-
-		/* Compander enable */
-		snd_soc_update_bits(codec, TOMTOM_A_CDC_COMP0_B1_CTL +
+			/* Set gain source to compander */
+			tomtom_config_gain_compander(codec, comp, true);
+			
+			/* Compander enable */
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_COMP0_B1_CTL +
 				    (comp * 8), enable_mask, enable_mask);
+				    
+			tomtom_discharge_comp(codec, comp);
 
-		tomtom_discharge_comp(codec, comp);
-
-		/* Set sample rate dependent paramater */
-		snd_soc_write(codec, TOMTOM_A_CDC_COMP0_B3_CTL + (comp * 8),
+			/* Set sample rate dependent paramater */
+			snd_soc_write(codec, TOMTOM_A_CDC_COMP0_B3_CTL + (comp * 8),
 					  comp_params->rms_meter_resamp_fact);
-		snd_soc_update_bits(codec,
+			snd_soc_update_bits(codec,
 						TOMTOM_A_CDC_COMP0_B2_CTL + (comp * 8),
 						0xF0, comp_params->rms_meter_div_fact << 4);
-		snd_soc_update_bits(codec,
+			snd_soc_update_bits(codec,
 						TOMTOM_A_CDC_COMP0_B2_CTL + (comp * 8),
 						0x0F, comp_params->peak_det_timeout);
+		} else {
+			/* Disable compander */
+			snd_soc_update_bits(codec,
+						TOMTOM_A_CDC_COMP0_B1_CTL + (comp * 8),
+						 enable_mask, 0x00);
 
+			/* Toggle compander reset bits */
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
+						    		 mask << comp_shift[comp],
+						   		 mask << comp_shift[comp]);
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
+						    		 mask << comp_shift[comp], 0);
+
+			/* Turn off the clock for compander in pair */
+			snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_RX_B2_CTL,
+						    		 mask << comp_shift[comp], 0);
+
+			/* Set gain source to register */
+			tomtom_config_gain_compander(codec, comp, false);			
+		}
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		/* Disable compander */
 		snd_soc_update_bits(codec,
-				    TOMTOM_A_CDC_COMP0_B1_CTL + (comp * 8),
-				    enable_mask, 0x00);
+					TOMTOM_A_CDC_COMP0_B1_CTL + (comp * 8),
+				        enable_mask, 0x00);
 
 		/* Toggle compander reset bits */
+		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,		
+					    		 mask << comp_shift[comp],
+						   	 mask << comp_shift[comp]);
 		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
-				    mask << comp_shift[comp],
-				    mask << comp_shift[comp]);
-		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_OTHR_RESET_B2_CTL,
-				    mask << comp_shift[comp], 0);
+					    		 mask << comp_shift[comp], 0);
 
 		/* Turn off the clock for compander in pair */
 		snd_soc_update_bits(codec, TOMTOM_A_CDC_CLK_RX_B2_CTL,
-				    mask << comp_shift[comp], 0);
+					    		 mask << comp_shift[comp], 0);
 
 		/* Set gain source to register */
 		tomtom_config_gain_compander(codec, comp, false);

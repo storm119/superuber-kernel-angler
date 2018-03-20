@@ -14,10 +14,6 @@
 #ifndef __SOUND_PDESIREAUDIO_API
 #define __SOUND_PDESIREAUDIO_API
 
-extern int PDesireAudio;
-
-extern int pdesireaudio_static_mode;
-
 extern int pdesireaudio_is_enabled(void);
 
 extern int pdesireaudio_api_print(const char *message, int error_code); 

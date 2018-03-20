@@ -646,14 +646,6 @@ config KERNEL_TEXT_MPU_PROT
 config STATE_NOTIFIER
         bool "State Notifier"
 
-config PDESIREAUDIO_HELPER
-	bool "Enable the PDesireAudio Userspace Helper"
-	default y
-	help
-	 To make it possible developing userspace applications 
-	 for PDesireAudio, the helper does provide required methods
-	 and values to control PDesireAudio via userspace
-
 source "drivers/soc/qcom/memshare/Kconfig"
 
 endif # ARCH_MSM

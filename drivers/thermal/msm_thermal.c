@@ -109,6 +109,7 @@ static int ocr_rail_cnt;
 static int limit_idx;
 static int limit_idx_low = 8;
 static int limit_idx_high = 20;
+static int intelli_user_control = 1;
 static int max_tsens_num;
 static struct cpufreq_frequency_table *table;
 static uint32_t usefreq;
@@ -829,6 +830,8 @@ module_param_named(thermal_limit_high, limit_idx_high,
 			int, 0664);
 module_param_named(thermal_limit_low, limit_idx_low,
 			int, 0664);
+module_param_named(intelli_user_control, intelli_user_control,
+			int, 0664);
 module_param_named(hotplug_temp_hysteresis, msm_thermal_info.hotplug_temp_hysteresis_degC,
 			uint, 0644);
 module_param_named(psm_temp, msm_thermal_info.psm_temp_degC,
@@ -853,6 +856,11 @@ static int  msm_thermal_cpufreq_callback(struct notifier_block *nfb,
 			max_freq_req = cpus[policy->cpu].limited_max_freq;
 			min_freq_req = cpus[policy->cpu].limited_min_freq;
 		}
+
+		if (intelli_user_control > 0)
+			if (max_freq_req < policy->user_policy.min)
+				max_freq_req = policy->user_policy.min;
+
 		pr_debug("mitigating CPU%d to freq max: %u min: %u\n",
 		policy->cpu, max_freq_req, min_freq_req);
 
@@ -1380,10 +1388,23 @@ static void do_cluster_freq_ctrl(long temp)
 			if (!(msm_thermal_info.bootup_freq_control_mask
 				& BIT(_cpu)))
 				continue;
+
+		if (intelli_user_control > 0) {
+			if (mitigate) {
+				pr_info_ratelimited("Limiting CPU%d max frequency. Temp:%ld\n"
+					, _cpu
+					, temp);
+			} else {
+				pr_info_ratelimited("Unlimiting CPU%d max frequency. Temp:%ld\n"
+					, _cpu
+					, temp);
+			}
+		} else {
 			pr_info("Limiting CPU%d max frequency to %u. Temp:%ld\n"
 				, _cpu
 				, cluster_ptr->freq_table[freq_idx].frequency
 				, temp);
+		}
 			cpus[_cpu].limited_max_freq =
 				cluster_ptr->freq_table[freq_idx].frequency;
 		}

@@ -83,6 +83,7 @@
 } while (0)
 
 static struct msm_thermal_data msm_thermal_info;
+static struct workqueue_struct *thermal_wq;
 static struct delayed_work check_temp_work;
 static uint32_t cpus_offlined;
 static cpumask_var_t cpus_previously_online;
@@ -3079,7 +3080,7 @@ static void check_temp(struct work_struct *work)
 
 reschedule:
 	if (intelli_enabled)
-		schedule_delayed_work(&check_temp_work,
+		queue_delayed_work(thermal_wq, &check_temp_work,
 				msecs_to_jiffies(msm_thermal_info.poll_ms));
 }
 
@@ -6117,6 +6118,13 @@ static int msm_thermal_dev_probe(struct platform_device *pdev)
 		interrupt_mode_enable = false;
 	}
 
+	thermal_wq = alloc_workqueue("thermal_wq", WQ_HIGHPRI, 0);
+	if (!thermal_wq) {
+		pr_err("Failed to run on high proirity workqueue!\n");
+		goto probe_exit;
+	}
+
+	queue_delayed_work(thermal_wq, &check_temp_work, 0);
 	return ret;
 fail:
 	if (ret)

@@ -138,7 +138,7 @@ choice
 		bool "Deadline" if IOSCHED_DEADLINE=y
 		
 	config DEFAULT_TRIPNDROID
-		bool "TD" if IOSCHED_TRIPNDROID=y
+		bool "TRIPNDROID" if IOSCHED_TRIPNDROID=y
 
 	config DEFAULT_ROW
 		bool "ROW" if IOSCHED_ROW=y

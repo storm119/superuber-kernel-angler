@@ -148,10 +148,28 @@ config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
 	  frequency lookup tables and optimized scaling triggers instead of
 	  % frequency steps to get smooth up/downscaling dependant on CPU load.
 	  
+config CPU_FREQ_DEFAULT_GOV_ALUCARD
+	bool "alucard"
+	select CPU_FREQ_GOV_ALUCARD
+	help
+	  Use the CPUFreq governor 'alucard' as default. A favourite choice and one of the original governors that
+	  Alucard_24 made. Alucard is based on ondemand but has been heavily tweaked to bring better battery life and
+	  performance. It has been known to be battery friendly without sacrificing much performance. If unsure have a look
+	  at the help section of the driver. Fallback governor will be the performance governor.
+
+config CPU_FREQ_DEFAULT_GOV_DARKNESS
+	bool "darkness"
+	select CPU_FREQ_GOV_DARKNESS
+	help
+	  It's based on nightmare but more simple and fast, basic configs but very complex structure. 
+	  It is an updated nightmare gov and improved stability, so far it is quite stable in tests
+
 config CPU_FREQ_DEFAULT_GOV_NIGHTMARE
- 	bool "nightmare"
- 	select CPU_FREQ_GOV_NIGHTMARE
- 	help
+	bool "nightmare"
+	select CPU_FREQ_GOV_NIGHTMARE
+	help
+	  A PegasusQ modified, less aggressive and more stable. A good compromise between performance and battery. In
+	  addition to the SoD is a prevention because it usually does not hotplug.
  	
 config CPU_FREQ_DEFAULT_GOV_TRIPNDROID
 	bool "tripndroid"
@@ -256,9 +274,20 @@ config CPU_FREQ_GOV_ZZMOOVE
 
 	  if in doubt, say N.
 	  
+config CPU_FREQ_GOV_ALUCARD
+	tristate "'alucard' cpufreq governor"
+	depends on CPU_FREQ
+	select CPU_FREQ_GOV_COMMON
+
+config CPU_FREQ_GOV_DARKNESS
+	tristate "'darkness' cpufreq governor"
+	depends on CPU_FREQ
+	select CPU_FREQ_GOV_COMMON
+
 config CPU_FREQ_GOV_NIGHTMARE
- 	tristate "'nightmare' cpufreq governor"
- 	depends on CPU_FREQ
+	tristate "'nightmare' cpufreq governor"
+	depends on CPU_FREQ
+	select CPU_FREQ_GOV_COMMON
  	
 config CPU_FREQ_GOV_TRIPNDROID
     tristate "'tripndroid' cpufreq governor"

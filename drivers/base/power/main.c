@@ -658,6 +658,8 @@ static void async_resume_early(void *data, async_cookie_t cookie)
 	put_device(dev);
 }
 
+extern void print_active_wakeup_sources(void);
+
 /**
  * dpm_resume_early - Execute "early resume" callbacks for all devices.
  * @state: PM transition of the system being carried out.

@@ -73,16 +73,6 @@ static void set_throttle_freq(struct thermal_policy *t,
 		int32_t idx, uint32_t cpu, uint32_t freq);
 static bool validate_cpu_freq(unsigned int cpu, uint32_t *freq);
 
-static inline bool cpufreq_next_valid(struct cpufreq_frequency_table **pos)
-{
-	while ((*pos)->frequency != CPUFREQ_TABLE_END)
-		if ((*pos)->frequency != CPUFREQ_ENTRY_INVALID)
-			return true;
-		else
-			(*pos)++;
-	return false;
-}
-
 static void msm_thermal_main(struct work_struct *work)
 {
 	struct thermal_policy *t = container_of(work, typeof(*t), dwork.work);

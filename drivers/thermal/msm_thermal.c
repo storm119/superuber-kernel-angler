@@ -82,7 +82,7 @@
 } while (0)
 
 //custom thermal
-#define DEF_TEMP_THRESHOLD 52
+#define DEF_TEMP_THRESHOLD 62
 #define HOTPLUG_SENSOR_ID 18
 #define HOTPLUG_HYSTERESIS 2
 unsigned int temp_threshold = DEF_TEMP_THRESHOLD;
@@ -2979,7 +2979,7 @@ static void check_temp(struct work_struct *work)
 	int ret = 0;
 
 	if (!msm_thermal_probed)
-		return;
+		goto reschedule;
 
 	do_therm_reset();
 

@@ -13,6 +13,13 @@
  * GNU General Public License for more details.
  *
  * Author: Mike Chan (mike@android.com)
+ * Author: Mostafa Zarghami (mostafazarghami@gmail.com)
+ *
+ * - Changelog:
+ *
+ * 'Gabriel' governor is based on the 'interactive'.
+ * 0.1 : initial version adapted from pixel 2 interactive governor.
+ * 0.2 : add idle timer rate & threshold
  *
  */
 
@@ -50,6 +57,9 @@ struct cpufreq_gabriel_cpuinfo {
 	u64 loc_hispeed_val_time; /* per-cpu hispeed_validate_time */
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
+	/* record the load of last 5 sampling intervals*/
+	unsigned int prev_load[5];
+	unsigned int prev_load_idx;
 };
 
 static DEFINE_PER_CPU(struct cpufreq_gabriel_cpuinfo, cpuinfo);
@@ -111,6 +121,11 @@ struct cpufreq_gabriel_tunables {
 #define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
 	int timer_slack_val;
 	bool io_is_busy;
+#define DEFAULT_TIMER_RATE_IDLE (60 * USEC_PER_MSEC)
+#define DEFAULT_IDLE_LOAD_THRESHOLD 20
+	unsigned long prev_timer_rate;
+	unsigned long timer_rate_idle;
+	unsigned long idle_load_threshold;
 };
 
 /* For cases where we have single governor instance for system */
@@ -339,6 +354,9 @@ static void cpufreq_gabriel_timer(unsigned long data)
 		&per_cpu(cpuinfo, data);
 	struct cpufreq_gabriel_tunables *tunables =
 		pcpu->policy->governor_data;
+	unsigned int timer_rate_idle = tunables->timer_rate_idle;
+	unsigned int avg_long_prev_load;
+	unsigned int load_idx;
 	unsigned int new_freq;
 	unsigned int loadadjfreq;
 	unsigned int index;
@@ -349,6 +367,34 @@ static void cpufreq_gabriel_timer(unsigned long data)
 		return;
 	if (!pcpu->governor_enabled)
 		goto exit;
+
+	/*
+	 * Average load of past five sampling. If avg_long_pre_load is lower
+	 * than 20, the system is idle and should not be interrupted by
+	 * CPUFreq governor timer.
+	 */
+	avg_long_prev_load = (pcpu->prev_load[4] +
+			      pcpu->prev_load[3] +
+			      pcpu->prev_load[2] +
+			      pcpu->prev_load[1] +
+			      pcpu->prev_load[0] + 4)/5;
+	/*update the history load*/
+	load_idx = pcpu->prev_load_idx;
+	pcpu->prev_load_idx = (load_idx + 1)%5;
+	pcpu->prev_load[pcpu->prev_load_idx] = cpu_load;
+
+	/*switch timer to timer_rate_idle when system is idle to save power*/
+	if (pcpu->policy->cur == pcpu->policy->min
+		&& avg_long_prev_load <= tunables->idle_load_threshold
+		&& cpu_load <= tunables->idle_load_threshold
+		&& tunables->timer_rate != tunables->timer_rate_idle) {
+		tunables->prev_timer_rate = tunables->timer_rate;
+		tunables->timer_rate
+			= max(tunables->timer_rate,
+				tunables->timer_rate_idle);
+	} else if (tunables->timer_rate != tunables->prev_timer_rate) {
+		tunables->timer_rate = tunables->prev_timer_rate;
+	}
 
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	now = update_load(data);
@@ -824,6 +870,25 @@ static ssize_t store_go_hispeed_load(struct cpufreq_gabriel_tunables
 	return count;
 }
 
+static ssize_t show_idle_load_threshold(struct cpufreq_gabriel_tunables
+		*tunables, char *buf)
+{
+	return sprintf(buf, "%lu\n", tunables->idle_load_threshold);
+}
+
+static ssize_t store_idle_load_threshold(struct cpufreq_gabriel_tunables
+		*tunables, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	tunables->idle_load_threshold = val;
+	return count;
+}
+
 static ssize_t show_min_sample_time(struct cpufreq_gabriel_tunables
 		*tunables, char *buf)
 {
@@ -865,6 +930,32 @@ static ssize_t store_timer_rate(struct cpufreq_gabriel_tunables *tunables,
 			val_round);
 
 	tunables->timer_rate = val_round;
+	tunables->prev_timer_rate = val_round;
+	return count;
+}
+
+static ssize_t show_timer_rate_idle(struct cpufreq_gabriel_tunables *tunables,
+		char *buf)
+{
+	return sprintf(buf, "%lu\n", tunables->timer_rate_idle);
+}
+
+static ssize_t store_timer_rate_idle(struct cpufreq_gabriel_tunables *tunables,
+		const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val, val_round;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+
+	val_round = jiffies_to_usecs(usecs_to_jiffies(val));
+	if (val != val_round)
+		pr_warn("timer_rate_idle not aligned to jiffy. Rounded up to %lu\n",
+			val_round);
+
+	tunables->timer_rate_idle = val_round;
 	return count;
 }
 
@@ -1012,8 +1103,10 @@ show_store_gov_pol_sys(target_loads);
 show_store_gov_pol_sys(above_hispeed_delay);
 show_store_gov_pol_sys(hispeed_freq);
 show_store_gov_pol_sys(go_hispeed_load);
+show_store_gov_pol_sys(idle_load_threshold);
 show_store_gov_pol_sys(min_sample_time);
 show_store_gov_pol_sys(timer_rate);
+show_store_gov_pol_sys(timer_rate_idle);
 show_store_gov_pol_sys(timer_slack);
 show_store_gov_pol_sys(boost);
 store_gov_pol_sys(boostpulse);
@@ -1036,8 +1129,10 @@ gov_sys_pol_attr_rw(target_loads);
 gov_sys_pol_attr_rw(above_hispeed_delay);
 gov_sys_pol_attr_rw(hispeed_freq);
 gov_sys_pol_attr_rw(go_hispeed_load);
+gov_sys_pol_attr_rw(idle_load_threshold);
 gov_sys_pol_attr_rw(min_sample_time);
 gov_sys_pol_attr_rw(timer_rate);
+gov_sys_pol_attr_rw(timer_rate_idle);
 gov_sys_pol_attr_rw(timer_slack);
 gov_sys_pol_attr_rw(boost);
 gov_sys_pol_attr_rw(boostpulse_duration);
@@ -1055,8 +1150,10 @@ static struct attribute *gabriel_attributes_gov_sys[] = {
 	&above_hispeed_delay_gov_sys.attr,
 	&hispeed_freq_gov_sys.attr,
 	&go_hispeed_load_gov_sys.attr,
+	&idle_load_threshold_gov_sys.attr,
 	&min_sample_time_gov_sys.attr,
 	&timer_rate_gov_sys.attr,
+	&timer_rate_idle_gov_sys.attr,
 	&timer_slack_gov_sys.attr,
 	&boost_gov_sys.attr,
 	&boostpulse_gov_sys.attr,
@@ -1076,8 +1173,10 @@ static struct attribute *gabriel_attributes_gov_pol[] = {
 	&above_hispeed_delay_gov_pol.attr,
 	&hispeed_freq_gov_pol.attr,
 	&go_hispeed_load_gov_pol.attr,
+	&idle_load_threshold_gov_pol.attr,
 	&min_sample_time_gov_pol.attr,
 	&timer_rate_gov_pol.attr,
+	&timer_rate_idle_gov_pol.attr,
 	&timer_slack_gov_pol.attr,
 	&boost_gov_pol.attr,
 	&boostpulse_gov_pol.attr,
@@ -1151,10 +1250,13 @@ static int cpufreq_governor_gabriel(struct cpufreq_policy *policy,
 		tunables->nabove_hispeed_delay =
 			ARRAY_SIZE(default_above_hispeed_delay);
 		tunables->go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
+		tunables->idle_load_threshold= DEFAULT_IDLE_LOAD_THRESHOLD;
 		tunables->target_loads = default_target_loads;
 		tunables->ntarget_loads = ARRAY_SIZE(default_target_loads);
 		tunables->min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 		tunables->timer_rate = DEFAULT_TIMER_RATE;
+		tunables->prev_timer_rate = DEFAULT_TIMER_RATE;
+		tunables->timer_rate_idle = DEFAULT_TIMER_RATE_IDLE;
 		tunables->boostpulse_duration_val = DEFAULT_MIN_SAMPLE_TIME;
 		tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
 
@@ -1342,6 +1444,7 @@ static void __exit cpufreq_gabriel_exit(void)
 module_exit(cpufreq_gabriel_exit);
 
 MODULE_AUTHOR("Mike Chan <mike@android.com>");
+MODULE_AUTHOR("Mostafa Zarghami <mostafazarghami@gmail.com>");
 MODULE_DESCRIPTION("'cpufreq_gabriel' - A cpufreq governor for "
 	"Latency sensitive workloads");
 MODULE_LICENSE("GPL");

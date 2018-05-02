@@ -21,6 +21,7 @@
  * 0.1 : initial version adapted from pixel 2 interactive governor.
  * 0.2 : add idle timer rate & threshold
  * 0.3 : add two phase frequency
+ * 0.4 : add max_local_load
  *
  */
 
@@ -130,6 +131,8 @@ struct cpufreq_gabriel_tunables {
 	unsigned long idle_load_threshold;
 #define DEFAULT_TWO_PHASE_FREQ 1094400
 	unsigned int two_phase_freq;
+#define DEFAULT_MAX_LOCAL_LOAD 100
+	unsigned long max_local_load;
 };
 
 /* For cases where we have single governor instance for system */
@@ -425,7 +428,8 @@ static void cpufreq_gabriel_timer(unsigned long data)
 	}
 
 	if (cpu_load >= tunables->go_hispeed_load || tunables->boosted) {
-		if (pcpu->policy->cur < tunables->hispeed_freq) {
+		if (pcpu->policy->cur < tunables->hispeed_freq &&
+		    cpu_load <= tunables->max_local_load) {
 			if (pcpu->two_phase_freq < pcpu->policy->cur)
 				phase = 1;
 			if (pcpu->two_phase_freq != 0 && phase == 0) {
@@ -452,7 +456,8 @@ static void cpufreq_gabriel_timer(unsigned long data)
 		}
 	}
 
-	if (pcpu->policy->cur >= tunables->hispeed_freq &&
+	if (cpu_load <= tunables->max_local_load &&
+	    pcpu->policy->cur >= tunables->hispeed_freq &&
 	    new_freq > pcpu->policy->cur &&
 	    now - pcpu->pol_hispeed_val_time <
 	    freq_to_above_hispeed_delay(tunables, pcpu->policy->cur)) {
@@ -914,6 +919,25 @@ static ssize_t store_go_hispeed_load(struct cpufreq_gabriel_tunables
 	return count;
 }
 
+static ssize_t show_max_local_load(struct cpufreq_gabriel_tunables
+		*tunables, char *buf)
+{
+	return sprintf(buf, "%lu\n", tunables->max_local_load);
+}
+
+static ssize_t store_max_local_load(struct cpufreq_gabriel_tunables
+		*tunables, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	tunables->max_local_load = val;
+	return count;
+}
+
 static ssize_t show_idle_load_threshold(struct cpufreq_gabriel_tunables
 		*tunables, char *buf)
 {
@@ -1148,6 +1172,7 @@ show_store_gov_pol_sys(above_hispeed_delay);
 show_store_gov_pol_sys(hispeed_freq);
 show_store_gov_pol_sys(two_phase_freq);
 show_store_gov_pol_sys(go_hispeed_load);
+show_store_gov_pol_sys(max_local_load);
 show_store_gov_pol_sys(idle_load_threshold);
 show_store_gov_pol_sys(min_sample_time);
 show_store_gov_pol_sys(timer_rate);
@@ -1175,6 +1200,7 @@ gov_sys_pol_attr_rw(above_hispeed_delay);
 gov_sys_pol_attr_rw(hispeed_freq);
 gov_sys_pol_attr_rw(two_phase_freq);
 gov_sys_pol_attr_rw(go_hispeed_load);
+gov_sys_pol_attr_rw(max_local_load);
 gov_sys_pol_attr_rw(idle_load_threshold);
 gov_sys_pol_attr_rw(min_sample_time);
 gov_sys_pol_attr_rw(timer_rate);
@@ -1197,6 +1223,7 @@ static struct attribute *gabriel_attributes_gov_sys[] = {
 	&hispeed_freq_gov_sys.attr,
 	&two_phase_freq_gov_sys.attr,
 	&go_hispeed_load_gov_sys.attr,
+	&max_local_load_gov_sys.attr,
 	&idle_load_threshold_gov_sys.attr,
 	&min_sample_time_gov_sys.attr,
 	&timer_rate_gov_sys.attr,
@@ -1221,6 +1248,7 @@ static struct attribute *gabriel_attributes_gov_pol[] = {
 	&hispeed_freq_gov_pol.attr,
 	&two_phase_freq_gov_pol.attr,
 	&go_hispeed_load_gov_pol.attr,
+	&max_local_load_gov_pol.attr,
 	&idle_load_threshold_gov_pol.attr,
 	&min_sample_time_gov_pol.attr,
 	&timer_rate_gov_pol.attr,
@@ -1308,6 +1336,7 @@ static int cpufreq_governor_gabriel(struct cpufreq_policy *policy,
 		tunables->boostpulse_duration_val = DEFAULT_MIN_SAMPLE_TIME;
 		tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
 		tunables->two_phase_freq = DEFAULT_TWO_PHASE_FREQ;
+		tunables->max_local_load = DEFAULT_MAX_LOCAL_LOAD;
 
 		spin_lock_init(&tunables->target_loads_lock);
 		spin_lock_init(&tunables->above_hispeed_delay_lock);

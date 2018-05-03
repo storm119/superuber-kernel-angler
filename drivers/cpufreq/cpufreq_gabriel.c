@@ -22,6 +22,7 @@
  * 0.2 : add idle timer rate & threshold
  * 0.3 : add two phase frequency
  * 0.4 : add max_local_load
+ * 0.5 : add sampling down factor
  *
  */
 
@@ -133,6 +134,8 @@ struct cpufreq_gabriel_tunables {
 	unsigned int two_phase_freq;
 #define DEFAULT_MAX_LOCAL_LOAD 100
 	unsigned long max_local_load;
+/* Sampling down factor to be applied to min_sample_time at max freq */
+	unsigned long sampling_down_factor;
 };
 
 /* For cases where we have single governor instance for system */
@@ -475,6 +478,15 @@ static void cpufreq_gabriel_timer(unsigned long data)
 	}
 
 	new_freq = pcpu->freq_table[index].frequency;
+
+	/*
+	 * Do not scale below floor_freq unless we have been at or above the
+	 * floor frequency for the minimum sample time since last validated.
+	 */
+	if (tunables->sampling_down_factor && pcpu->policy->cur == pcpu->policy->max)
+		tunables->min_sample_time = tunables->sampling_down_factor;
+	else
+		tunables->min_sample_time = tunables->min_sample_time;
 
 	/*
 	 * Do not scale below floor_freq unless we have been at or above the
@@ -938,6 +950,25 @@ static ssize_t store_max_local_load(struct cpufreq_gabriel_tunables
 	return count;
 }
 
+static ssize_t show_sampling_down_factor(struct cpufreq_gabriel_tunables
+		*tunables, char *buf)
+{
+	return sprintf(buf, "%lu\n", tunables->sampling_down_factor);
+}
+
+static ssize_t store_sampling_down_factor(struct cpufreq_gabriel_tunables
+		*tunables, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	tunables->sampling_down_factor = val;
+	return count;
+}
+
 static ssize_t show_idle_load_threshold(struct cpufreq_gabriel_tunables
 		*tunables, char *buf)
 {
@@ -1173,6 +1204,7 @@ show_store_gov_pol_sys(hispeed_freq);
 show_store_gov_pol_sys(two_phase_freq);
 show_store_gov_pol_sys(go_hispeed_load);
 show_store_gov_pol_sys(max_local_load);
+show_store_gov_pol_sys(sampling_down_factor);
 show_store_gov_pol_sys(idle_load_threshold);
 show_store_gov_pol_sys(min_sample_time);
 show_store_gov_pol_sys(timer_rate);
@@ -1201,6 +1233,7 @@ gov_sys_pol_attr_rw(hispeed_freq);
 gov_sys_pol_attr_rw(two_phase_freq);
 gov_sys_pol_attr_rw(go_hispeed_load);
 gov_sys_pol_attr_rw(max_local_load);
+gov_sys_pol_attr_rw(sampling_down_factor);
 gov_sys_pol_attr_rw(idle_load_threshold);
 gov_sys_pol_attr_rw(min_sample_time);
 gov_sys_pol_attr_rw(timer_rate);
@@ -1224,6 +1257,7 @@ static struct attribute *gabriel_attributes_gov_sys[] = {
 	&two_phase_freq_gov_sys.attr,
 	&go_hispeed_load_gov_sys.attr,
 	&max_local_load_gov_sys.attr,
+	&sampling_down_factor_gov_sys.attr,
 	&idle_load_threshold_gov_sys.attr,
 	&min_sample_time_gov_sys.attr,
 	&timer_rate_gov_sys.attr,
@@ -1249,6 +1283,7 @@ static struct attribute *gabriel_attributes_gov_pol[] = {
 	&two_phase_freq_gov_pol.attr,
 	&go_hispeed_load_gov_pol.attr,
 	&max_local_load_gov_pol.attr,
+	&sampling_down_factor_gov_pol.attr,
 	&idle_load_threshold_gov_pol.attr,
 	&min_sample_time_gov_pol.attr,
 	&timer_rate_gov_pol.attr,

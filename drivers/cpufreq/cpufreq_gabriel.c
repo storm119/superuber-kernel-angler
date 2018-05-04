@@ -23,6 +23,7 @@
  * 0.3 : add two phase frequency
  * 0.4 : add max_local_load
  * 0.5 : add sampling down factor
+ * 0.6 : add frequency calculation threshold
  *
  */
 
@@ -136,6 +137,12 @@ struct cpufreq_gabriel_tunables {
 	unsigned long max_local_load;
 /* Sampling down factor to be applied to min_sample_time at max freq */
 	unsigned long sampling_down_factor;
+/*
+ * Frequency calculation threshold.  Avoid freq oscillations up to this
+ * threshold and allow for dynamic changes above.
+ */
+#define DEFAULT_FREQ_CALC_THRESH 1094400
+	unsigned long freq_calc_thresh;
 };
 
 /* For cases where we have single governor instance for system */
@@ -442,6 +449,9 @@ static void cpufreq_gabriel_timer(unsigned long data)
 		} else {
 			new_freq = choose_freq(pcpu, loadadjfreq);
 
+			if (new_freq > tunables->freq_calc_thresh)
+				new_freq = pcpu->policy->max * cpu_load / 100;
+
 			if (new_freq < tunables->hispeed_freq)
 				new_freq = tunables->hispeed_freq;
 		}
@@ -450,6 +460,9 @@ static void cpufreq_gabriel_timer(unsigned long data)
 		if (new_freq > tunables->hispeed_freq &&
 				pcpu->policy->cur < tunables->hispeed_freq)
 			new_freq = tunables->hispeed_freq;
+
+		if (new_freq > tunables->freq_calc_thresh)
+			new_freq = pcpu->policy->max * cpu_load / 100;
 	}
 
 	if (counter > 0) {
@@ -912,6 +925,25 @@ static ssize_t store_two_phase_freq(struct cpufreq_gabriel_tunables *tunables,
 	return count;
 }
 
+static ssize_t show_freq_calc_thresh(struct cpufreq_gabriel_tunables *tunables,
+		char *buf)
+{
+	return sprintf(buf, "%lu\n", tunables->freq_calc_thresh);
+}
+
+static ssize_t store_freq_calc_thresh(struct cpufreq_gabriel_tunables *tunables,
+		const char *buf, size_t count)
+{
+	int ret = 0;
+	long unsigned int val;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	tunables->freq_calc_thresh = val;
+	return count;
+}
+
 static ssize_t show_go_hispeed_load(struct cpufreq_gabriel_tunables
 		*tunables, char *buf)
 {
@@ -1202,6 +1234,7 @@ show_store_gov_pol_sys(target_loads);
 show_store_gov_pol_sys(above_hispeed_delay);
 show_store_gov_pol_sys(hispeed_freq);
 show_store_gov_pol_sys(two_phase_freq);
+show_store_gov_pol_sys(freq_calc_thresh);
 show_store_gov_pol_sys(go_hispeed_load);
 show_store_gov_pol_sys(max_local_load);
 show_store_gov_pol_sys(sampling_down_factor);
@@ -1231,6 +1264,7 @@ gov_sys_pol_attr_rw(target_loads);
 gov_sys_pol_attr_rw(above_hispeed_delay);
 gov_sys_pol_attr_rw(hispeed_freq);
 gov_sys_pol_attr_rw(two_phase_freq);
+gov_sys_pol_attr_rw(freq_calc_thresh);
 gov_sys_pol_attr_rw(go_hispeed_load);
 gov_sys_pol_attr_rw(max_local_load);
 gov_sys_pol_attr_rw(sampling_down_factor);
@@ -1255,6 +1289,7 @@ static struct attribute *gabriel_attributes_gov_sys[] = {
 	&above_hispeed_delay_gov_sys.attr,
 	&hispeed_freq_gov_sys.attr,
 	&two_phase_freq_gov_sys.attr,
+	&freq_calc_thresh_gov_sys.attr,
 	&go_hispeed_load_gov_sys.attr,
 	&max_local_load_gov_sys.attr,
 	&sampling_down_factor_gov_sys.attr,
@@ -1281,6 +1316,7 @@ static struct attribute *gabriel_attributes_gov_pol[] = {
 	&above_hispeed_delay_gov_pol.attr,
 	&hispeed_freq_gov_pol.attr,
 	&two_phase_freq_gov_pol.attr,
+	&freq_calc_thresh_gov_pol.attr,
 	&go_hispeed_load_gov_pol.attr,
 	&max_local_load_gov_pol.attr,
 	&sampling_down_factor_gov_pol.attr,
@@ -1371,6 +1407,7 @@ static int cpufreq_governor_gabriel(struct cpufreq_policy *policy,
 		tunables->boostpulse_duration_val = DEFAULT_MIN_SAMPLE_TIME;
 		tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
 		tunables->two_phase_freq = DEFAULT_TWO_PHASE_FREQ;
+		tunables->freq_calc_thresh = DEFAULT_FREQ_CALC_THRESH;
 		tunables->max_local_load = DEFAULT_MAX_LOCAL_LOAD;
 
 		spin_lock_init(&tunables->target_loads_lock);

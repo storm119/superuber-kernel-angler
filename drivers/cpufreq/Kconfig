@@ -139,6 +139,11 @@ config CPU_FREQ_DEFAULT_GOV_ELEMENTALX
 	help
 	  Use the CPUFreq governor 'elementalx' as default.
 
+config CPU_FREQ_DEFAULT_GOV_GABRIEL
+	bool "gabriel"
+	select CPU_FREQ_GOV_GABRIEL
+	help
+
 config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
 	bool "zzmoove"
 	select CPU_FREQ_GOV_ZZMOOVE
@@ -271,6 +276,12 @@ config CPU_FREQ_GOV_ELEMENTALX
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
+
+config CPU_FREQ_GOV_GABRIEL
+	tristate "'gabriel' cpufreq governor"
+	depends on CPU_FREQ
+	select CPU_FREQ_GOV_COMMON
+	default y
 
 config CPU_FREQ_GOV_ZZMOOVE
 	tristate "'zzmoove' cpufreq governor"

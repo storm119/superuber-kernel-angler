@@ -63,7 +63,7 @@
 #define MSM_TSENS_PRINT  "log_tsens_temperature"
 #define CPU_BUF_SIZE 64
 #define CPU_DEVICE "cpu%d"
-#define INTELLI_USER_FREQ 800000
+#define INTELLI_USER_FREQ 1000000
 
 #define THERM_CREATE_DEBUGFS_DIR(_node, _name, _parent, _ret) \
 	do { \

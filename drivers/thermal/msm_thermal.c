@@ -83,7 +83,6 @@
 
 static struct msm_thermal_data msm_thermal_info;
 static struct delayed_work check_temp_work;
-static bool core_control_enabled;
 static uint32_t cpus_offlined;
 static cpumask_var_t cpus_previously_online;
 static DEFINE_MUTEX(core_control_mutex);
@@ -96,8 +95,13 @@ static struct completion hotplug_notify_complete;
 static struct completion freq_mitigation_complete;
 static struct completion thermal_monitor_complete;
 
-static int enabled;
-static int polling_enabled;
+/* Always enable Intelli Thermal and core control on boot */
+static int intelli_enabled = 1;
+static bool core_control_enabled = true;
+
+/* dummy parameter for rom thermal and apps */
+static bool enabled = true;
+
 static int rails_cnt;
 static int sensor_cnt;
 static int psm_rails_cnt;
@@ -3048,10 +3052,9 @@ static void check_temp(struct work_struct *work)
 	do_freq_control(temp);
 
 reschedule:
-	if (polling_enabled)
-		queue_delayed_work(system_power_efficient_wq,
-			&check_temp_work,
-			msecs_to_jiffies(msm_thermal_info.poll_ms));
+	if (intelli_enabled)
+		schedule_delayed_work(&check_temp_work,
+				msecs_to_jiffies(msm_thermal_info.poll_ms));
 }
 
 static int __ref msm_thermal_cpu_callback(struct notifier_block *nfb,
@@ -4256,9 +4259,9 @@ static void interrupt_mode_init(void)
 		interrupt_mode_enable = true;
 		return;
 	}
-	if (polling_enabled) {
+	if (intelli_enabled) {
 		pr_info("Interrupt mode init\n");
-		polling_enabled = 0;
+		intelli_enabled = 0;
 		disable_msm_thermal();
 		hotplug_init();
 		freq_mitigation_init();
@@ -4273,12 +4276,12 @@ static int __ref set_enabled(const char *val, const struct kernel_param *kp)
 	int ret = 0;
 
 	if (*val == '0' || *val == 'n' || *val == 'N') {
-		enabled = 0;
+		intelli_enabled = 0;
 		interrupt_mode_init();
 		pr_info("%s: msm_thermal disabled!\n", KBUILD_MODNAME);
 	} else {
-		if (!enabled) {
-			enabled = 1;
+		if (!intelli_enabled) {
+			intelli_enabled = 1;
 			schedule_delayed_work(&check_temp_work,
 				msecs_to_jiffies(msm_thermal_info.poll_ms));
 			pr_info("%s: rescheduling...\n", KBUILD_MODNAME);
@@ -4286,7 +4289,7 @@ static int __ref set_enabled(const char *val, const struct kernel_param *kp)
 			pr_info("%s: already running...\n", KBUILD_MODNAME);
 	}
 
-	pr_info("enabled = %d\n", enabled);
+	pr_info("intelli_enabled = %d\n", intelli_enabled);
 
 	return ret;
 }
@@ -4297,8 +4300,8 @@ static struct kernel_param_ops module_ops = {
 	.get = param_get_bool,
 };
 
-module_param_cb(enabled, &module_ops, &enabled, 0644);
-MODULE_PARM_DESC(enabled, "enforce thermal limit on cpu");
+module_param_cb(intelli_enabled, &module_ops, &intelli_enabled, 0644);
+MODULE_PARM_DESC(intelli_enabled, "enforce thermal limit on cpu");
 
 /* Thermal aware scheduling */
 #ifdef VENDOR_EDIT
@@ -4379,7 +4382,7 @@ static ssize_t __ref store_cpus_offlined(struct kobject *kobj,
 		goto done_cc;
 	}
 
-	if (polling_enabled) {
+	if (intelli_enabled) {
 		pr_err("Ignoring request; polling thread is enabled.\n");
 		goto done_cc;
 	}
@@ -4771,7 +4774,6 @@ int msm_thermal_init(struct msm_thermal_data *pdata)
 
 	enabled = 1;
 	pr_info("%s: polling enabled!\n", KBUILD_MODNAME);
-	polling_enabled = 0;
 	ret = cpufreq_register_notifier(&msm_thermal_cpufreq_notifier,
 			CPUFREQ_POLICY_NOTIFIER);
 	if (ret)
@@ -5667,10 +5669,8 @@ static int probe_cc(struct device_node *node, struct msm_thermal_data *data,
 	int ret = 0;
 	uint32_t cpu = 0;
 
-	if (num_possible_cpus() > 1) {
-		core_control_enabled = 1;
+	if (num_possible_cpus() > 1)
 		hotplug_enabled = 1;
-	}
 
 	key = "qcom,core-limit-temp";
 	ret = of_property_read_u32(node, key, &data->core_limit_temp_degC);
@@ -6083,6 +6083,8 @@ static int msm_thermal_dev_probe(struct platform_device *pdev)
 	ret = msm_thermal_init(&data);
 	msm_thermal_probed = true;
 	pr_info("%s: msm_thermal_dev_probe completed!\n", KBUILD_MODNAME);
+	/* start intelli thermal again */
+	intelli_enabled = 1;
 
 	if (interrupt_mode_enable) {
 		interrupt_mode_init();

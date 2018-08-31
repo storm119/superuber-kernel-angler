@@ -19,7 +19,7 @@
 #include <linux/fb.h>
 
 #define NOOP_IOSCHED "noop"
-#define RESTORE_DELAY_MS (10000)
+#define RESTORE_DELAY_MS (3000)
 
 struct iosched_conf {
 	struct delayed_work restore_prev;

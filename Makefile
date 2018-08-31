@@ -241,8 +241,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu89 $(GRAPHITE)
-HOSTCXXFLAGS = -Ofast $(GRAPHITE)
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -fgcse-las -pipe -std=gnu89 $(GRAPHITE)
+HOSTCXXFLAGS = -Ofast -fgcse-las -pipe $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -323,12 +323,12 @@ $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
 # SuperUbeR Extra flags
-GRAPHITE        = -fgraphite -fgraphite-identity -fivopts -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
-OPTS			= -g0 -DNDEBUG -fomit-frame-pointer -ftree-vectorize -fgcse-lm -fgcse-sm -fgcse-las 
-CORTEX_OPTS    	= -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
+GRAPHITE		= -fgraphite -fgraphite-identity -fivopts -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block -floop-flatten
+OPTS			= -g0 -DNDEBUG -fomit-frame-pointer -ftree-vectorize -fgcse-lm -fgcse-sm -fgcse-las -pipe
+CORTEX_OPTS		= -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
 GEN_OPT_FLAGS 	= $(call cc-option,$(CORTEX_OPTS),-march=armv8-a+crc+crypto)
 GCC_OPTS		= $(OPTS) $(GRAPHITE) $(CORTEX_OPTS)
-GCC7WARNINGS	= -Wno-nonnull
+GCC7WARNINGS	= -Wno-nonnull -Wno-unused-variable
 
 # Make variables (CC, etc...) 
 

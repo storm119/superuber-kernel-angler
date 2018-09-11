@@ -62,20 +62,16 @@ static cpumask_t speedchange_cpumask;
 static spinlock_t speedchange_cpumask_lock;
 static struct mutex gov_lock;
 
-#define DEFAULT_TIMER_RATE (20 * USEC_PER_MSEC)
-#define DEFAULT_TIMER_RATE_SUSP ((unsigned long)(50 * USEC_PER_MSEC))
-
-#define FREQ_RESPONSIVENESS				1248000
-#define FREQ_RESPONSIVENESS_MAX			1344000
-#define FREQ_RESPONSIVENESS_MAX_BIGC		1958400
+#define DEFAULT_TIMER_RATE (60 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE_SUSP ((unsigned long)(120 * USEC_PER_MSEC))
 
 #define CPUS_DOWN_RATE				1
 #define CPUS_UP_RATE					1
 
-#define PUMP_INC_STEP_AT_MIN_FREQ	2
-#define PUMP_INC_STEP				1
-#define PUMP_DEC_STEP_AT_MIN_FREQ	1
-#define PUMP_DEC_STEP				2
+#define PUMP_INC_STEP_AT_MIN_FREQ	6
+#define PUMP_INC_STEP				3
+#define PUMP_DEC_STEP_AT_MIN_FREQ	3
+#define PUMP_DEC_STEP				1
 
 struct cpufreq_alucard_tunables {
 	int usage_count;
@@ -993,11 +989,8 @@ static struct cpufreq_alucard_tunables *alloc_tunable(
 	tunables->timer_rate_prev = DEFAULT_TIMER_RATE;
 #endif
 	tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
-	tunables->freq_responsiveness = FREQ_RESPONSIVENESS;
-	if (policy->cpu < 4)
-		tunables->freq_responsiveness_max = FREQ_RESPONSIVENESS_MAX;
-	else
-		tunables->freq_responsiveness_max = FREQ_RESPONSIVENESS_MAX_BIGC;
+	tunables->freq_responsiveness = policy->min;
+	tunables->freq_responsiveness_max = policy->max;
 	tunables->cpus_up_rate_at_max_freq = CPUS_UP_RATE;
 	tunables->cpus_up_rate = CPUS_UP_RATE;
 	tunables->cpus_down_rate_at_max_freq = CPUS_DOWN_RATE;

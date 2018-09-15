@@ -103,8 +103,6 @@ static bool validate_cpu_freq(unsigned int cpu, uint32_t *freq);
 
 static struct notifier_block notif;
 
-static inline bool cpufreq_next_valid(struct cpufreq_frequency_table **pos);
-
 static bool is_initd(const char* p)
 {
 	return strncmp(p, "init", sizeof("init"));

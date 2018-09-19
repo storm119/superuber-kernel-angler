@@ -487,15 +487,7 @@ struct cpufreq_frequency_table {
 				    * order */
 };
 
-static inline bool cpufreq_next_valid(struct cpufreq_frequency_table **pos)
-{
-	while ((*pos)->frequency != CPUFREQ_TABLE_END)
-		if ((*pos)->frequency != CPUFREQ_ENTRY_INVALID)
-			return true;
-		else
-			(*pos)++;
-	return false;
-}
+bool cpufreq_next_valid(struct cpufreq_frequency_table **pos);
 
 /*
  * cpufreq_for_each_entry -	iterate over a cpufreq_frequency_table

@@ -328,7 +328,7 @@ OPTS			= -g0 -DNDEBUG -fomit-frame-pointer -ftree-vectorize -fgcse-lm -fgcse-sm 
 CORTEX_OPTS		= -mcpu=cortex-a57.cortex-a53+crc+crypto -mtune=cortex-a57.cortex-a53
 GEN_OPT_FLAGS 	= $(call cc-option,$(CORTEX_OPTS),-march=armv8-a+crc+crypto)
 GCC_OPTS		= $(OPTS) $(GRAPHITE) $(CORTEX_OPTS)
-GCC7WARNINGS	= -Wno-nonnull -Wno-unused-variable
+GCC7WARNINGS	= -Wno-nonnull
 
 # Make variables (CC, etc...) 
 

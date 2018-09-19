@@ -131,7 +131,7 @@ struct cpufreq_gabrielplus_tunables {
 	unsigned long prev_timer_rate;
 	unsigned long timer_rate_idle;
 	unsigned long idle_load_threshold;
-#define DEFAULT_TWO_PHASE_FREQ 1094400
+#define DEFAULT_TWO_PHASE_FREQ 1248000
 	unsigned int two_phase_freq;
 #define DEFAULT_MAX_LOCAL_LOAD 100
 	unsigned long max_local_load;
@@ -141,7 +141,7 @@ struct cpufreq_gabrielplus_tunables {
  * Frequency calculation threshold.  Avoid freq oscillations up to this
  * threshold and allow for dynamic changes above.
  */
-#define DEFAULT_FREQ_CALC_THRESH 1094400
+#define DEFAULT_FREQ_CALC_THRESH 1248000
 	unsigned long freq_calc_thresh;
 };
 
@@ -371,7 +371,6 @@ static void cpufreq_gabrielplus_timer(unsigned long data)
 		&per_cpu(cpuinfo, data);
 	struct cpufreq_gabrielplus_tunables *tunables =
 		pcpu->policy->governor_data;
-	unsigned int timer_rate_idle = tunables->timer_rate_idle;
 	unsigned int avg_long_prev_load;
 	unsigned int load_idx;
 	unsigned int new_freq;
